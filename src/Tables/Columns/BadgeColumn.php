@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Tables\Columns;
 
 use Illuminate\Database\Eloquent\Model;
+use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\EnumSupport;
 use UnitEnum;
 
@@ -17,11 +18,14 @@ final class BadgeColumn extends Column
     private ?string $enumClass = null;
 
     /**
-     * @param  array<string, string>  $colors
+     * @param  array<string, Color|string>  $colors
      */
     public function colors(array $colors): self
     {
-        $this->colors = $colors;
+        $this->colors = array_map(
+            static fn (Color|string $color): string => $color instanceof Color ? $color->hex() : $color,
+            $colors,
+        );
 
         return $this;
     }

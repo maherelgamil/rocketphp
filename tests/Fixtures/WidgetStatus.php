@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Tests\Fixtures;
 
+use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\Contracts\HasColor;
 use MaherElGamil\Rocket\Support\Contracts\HasLabel;
 
@@ -22,11 +23,11 @@ enum WidgetStatus: string implements HasColor, HasLabel
         };
     }
 
-    public function getColor(): ?string
+    public function getColor(): Color|string|null
     {
         return match ($this) {
-            self::Active => '#16a34a',
-            self::Draft => '#64748b',
+            self::Active => Color::Green,
+            self::Draft => Color::Slate,
             self::Archived => null,
         };
     }

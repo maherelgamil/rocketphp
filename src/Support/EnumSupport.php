@@ -6,6 +6,7 @@ namespace MaherElGamil\Rocket\Support;
 
 use BackedEnum;
 use InvalidArgumentException;
+use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\Contracts\HasColor;
 use MaherElGamil\Rocket\Support\Contracts\HasLabel;
 use UnitEnum;
@@ -42,6 +43,10 @@ final class EnumSupport
         foreach ($enumClass::cases() as $case) {
             if ($case instanceof HasColor) {
                 $color = $case->getColor();
+
+                if ($color instanceof Color) {
+                    $color = $color->hex();
+                }
 
                 if ($color !== null) {
                     $colors[self::valueOf($case)] = $color;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Http\Request;
 use MaherElGamil\Rocket\Forms\Components\Select;
+use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\EnumSupport;
 use MaherElGamil\Rocket\Tables\Columns\BadgeColumn;
 use MaherElGamil\Rocket\Tables\Filters\SelectFilter;
@@ -65,6 +66,18 @@ it('preserves enum value when BadgeColumn state is a UnitEnum instance', functio
 
     expect($column->getState($record))->toBe('draft');
     expect($column->render($record))->toBe('Draft Widget');
+});
+
+it('accepts Color instances in BadgeColumn colors() and normalizes to hex', function () {
+    $column = BadgeColumn::make('status')->colors([
+        'active' => Color::Green,
+        'draft' => '#abcdef',
+    ]);
+
+    expect($column->toArray()['extra']['colors'])->toBe([
+        'active' => '#16a34a',
+        'draft' => '#abcdef',
+    ]);
 });
 
 it('throws when a non-enum class is passed to enum helpers', function () {
