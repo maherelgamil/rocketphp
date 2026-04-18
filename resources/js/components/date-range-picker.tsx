@@ -87,9 +87,9 @@ export function DateRangePicker({ from, until, onChange, label, className }: Dat
     };
 
     return (
-        <div className={cn('space-y-1', className)}>
+        <div className={cn('flex flex-col gap-1', className)}>
             {label && (
-                <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                <label className="block text-xs font-medium text-muted-foreground">{label}</label>
             )}
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
