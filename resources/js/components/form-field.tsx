@@ -102,6 +102,71 @@ function renderControl(
                 </div>
             );
 
+        case 'checkbox':
+            return (
+                <label className="flex items-center gap-2">
+                    <input
+                        id={field.name}
+                        name={field.name}
+                        type="checkbox"
+                        checked={Boolean(value)}
+                        onChange={(e) => onChange(e.target.checked)}
+                        disabled={field.disabled}
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                    />
+                </label>
+            );
+
+        case 'radio': {
+            const options = (field.extra.options ?? {}) as Record<string, string>;
+            const inline = Boolean(field.extra.inline);
+            return (
+                <div className={inline ? 'flex flex-wrap gap-4' : 'flex flex-col gap-2'}>
+                    {Object.entries(options).map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-2 text-sm">
+                            <input
+                                type="radio"
+                                name={field.name}
+                                value={key}
+                                checked={stringValue(value) === key}
+                                onChange={() => onChange(key)}
+                                disabled={field.disabled}
+                                className="h-4 w-4 border-input text-primary focus:ring-primary"
+                            />
+                            <span>{label}</span>
+                        </label>
+                    ))}
+                </div>
+            );
+        }
+
+        case 'multi_select': {
+            const options = (field.extra.options ?? {}) as Record<string, string>;
+            const selected = Array.isArray(value) ? (value as string[]).map(String) : [];
+            const toggle = (key: string) => {
+                const next = selected.includes(key)
+                    ? selected.filter((k) => k !== key)
+                    : [...selected, key];
+                onChange(next);
+            };
+            return (
+                <div className="flex flex-col gap-2 rounded-md border border-input p-3">
+                    {Object.entries(options).map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={selected.includes(key)}
+                                onChange={() => toggle(key)}
+                                disabled={field.disabled}
+                                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                            />
+                            <span>{label}</span>
+                        </label>
+                    ))}
+                </div>
+            );
+        }
+
         case 'date': {
             const withTime = Boolean(field.extra.with_time);
             return (
