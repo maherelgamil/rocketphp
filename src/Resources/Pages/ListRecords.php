@@ -58,6 +58,7 @@ class ListRecords extends Page
                 $row['_can_update'] = $resource::hasForm()
                     && $resource::can($request, 'update', $record);
                 $row['_can_delete'] = $resource::can($request, 'delete', $record);
+                $row['_can_view'] = $resource::can($request, 'view', $record);
 
                 return $row;
             })

@@ -123,6 +123,11 @@ final class PanelManager
                 ->name('resource.edit')
                 ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint]);
 
+            Route::get('{resource}/{record}/view', [ResourceController::class, 'view'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.view')
+                ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint]);
+
             Route::match(['put', 'patch'], '{resource}/{record}', [ResourceController::class, 'update'])
                 ->defaults('panelId', $panel->id())
                 ->name('resource.update')

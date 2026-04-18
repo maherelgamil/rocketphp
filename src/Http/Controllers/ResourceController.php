@@ -39,6 +39,13 @@ final class ResourceController extends Controller
         return $this->dispatchPage($request, $panel, $resourceClass, 'edit');
     }
 
+    public function view(Request $request, string $resource, string|int $record)
+    {
+        [$panel, $resourceClass] = $this->resolve($request, $resource);
+
+        return $this->dispatchPage($request, $panel, $resourceClass, 'view');
+    }
+
     public function store(Request $request, string $resource): RedirectResponse
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);

@@ -5,6 +5,7 @@ import {
     ArrowUpDown,
     Check,
     Copy,
+    Eye,
     MoreHorizontal,
     Pencil,
     Search,
@@ -499,9 +500,11 @@ export default function DataTable({
                                                         const Icon =
                                                             action.icon === 'pencil'
                                                                 ? Pencil
-                                                                : action.icon === 'trash-2'
-                                                                  ? Trash2
-                                                                  : MoreHorizontal;
+                                                                : action.icon === 'eye'
+                                                                  ? Eye
+                                                                  : action.icon === 'trash-2'
+                                                                    ? Trash2
+                                                                    : MoreHorizontal;
 
                                                         if (action.link && action.route_suffix) {
                                                             return (

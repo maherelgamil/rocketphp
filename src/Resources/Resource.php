@@ -13,6 +13,7 @@ use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Resources\Pages\CreateRecord;
 use MaherElGamil\Rocket\Resources\Pages\EditRecord;
 use MaherElGamil\Rocket\Resources\Pages\ListRecords;
+use MaherElGamil\Rocket\Resources\Pages\ViewRecord;
 use MaherElGamil\Rocket\Tables\Table;
 
 abstract class Resource
@@ -94,6 +95,7 @@ abstract class Resource
             'index' => ListRecords::class,
             'create' => CreateRecord::class,
             'edit' => EditRecord::class,
+            'view' => ViewRecord::class,
         ];
     }
 
@@ -112,7 +114,7 @@ abstract class Resource
     /**
      * Authorize a policy ability for the resource model (abort403 on failure).
      *
-     * @param  'viewAny'|'create'|'update'|'delete'  $ability
+     * @param  'viewAny'|'view'|'create'|'update'|'delete'  $ability
      */
     public static function authorizeForRequest(Request $request, string $ability, ?Model $model = null): void
     {
@@ -126,6 +128,7 @@ abstract class Resource
 
         match ($ability) {
             'viewAny' => $gate->authorize('viewAny', $modelClass),
+            'view' => $gate->authorize('view', $model ?? throw new \InvalidArgumentException('Model required for view authorization.')),
             'create' => $gate->authorize('create', $modelClass),
             'update' => $gate->authorize('update', $model ?? throw new \InvalidArgumentException('Model required for update authorization.')),
             'delete' => $gate->authorize('delete', $model ?? throw new \InvalidArgumentException('Model required for delete authorization.')),
@@ -134,7 +137,7 @@ abstract class Resource
     }
 
     /**
-     * @param  'viewAny'|'create'|'update'|'delete'  $ability
+     * @param  'viewAny'|'view'|'create'|'update'|'delete'  $ability
      */
     public static function can(Request $request, string $ability, ?Model $model = null): bool
     {
@@ -148,6 +151,7 @@ abstract class Resource
 
         return match ($ability) {
             'viewAny' => $gate->check('viewAny', $modelClass),
+            'view' => $model !== null && $gate->check('view', $model),
             'create' => $gate->check('create', $modelClass),
             'update' => $model !== null && $gate->check('update', $model),
             'delete' => $model !== null && $gate->check('delete', $model),
