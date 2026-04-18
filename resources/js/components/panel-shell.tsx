@@ -12,7 +12,9 @@ import {
     Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useFlashToast } from '../hooks/use-flash-toast';
 import { cn } from '../lib/utils';
+import { Toaster } from './ui/sonner';
 
 const NAV_ICONS: Record<string, LucideIcon> = {
     'layout-dashboard': LayoutDashboard,
@@ -59,6 +61,8 @@ type Props = {
 };
 
 export default function PanelShell({ panel, activeSlug, children }: Props) {
+    useFlashToast();
+
     const groups = panel.navigation.reduce<Record<string, NavItem[]>>((acc, item) => {
         const key = item.group ?? '';
         (acc[key] ||= []).push(item);
@@ -105,6 +109,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
             <main className="flex-1 overflow-x-auto">
                 <div className="mx-auto max-w-7xl p-8">{children}</div>
             </main>
+            <Toaster />
         </div>
     );
 }
