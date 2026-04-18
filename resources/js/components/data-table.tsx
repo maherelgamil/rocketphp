@@ -3,11 +3,13 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    Check,
     Copy,
     MoreHorizontal,
     Pencil,
     Search,
     Trash2,
+    X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ConfirmDialog from './confirm-dialog';
@@ -598,6 +600,16 @@ export default function DataTable({
 function renderCell(col: Column, value: unknown) {
     if (value === null || value === undefined) {
         return <span className="text-muted-foreground">—</span>;
+    }
+
+    if (col.type === 'boolean') {
+        const truthy = Boolean(value) && value !== '0' && value !== 0;
+        const token = String(truthy ? col.extra.true_color : col.extra.false_color);
+        const colorClass =
+            badgeColorClasses[token]?.match(/text-\S+/)?.[0] ?? 'text-muted-foreground';
+        const iconName = String(truthy ? col.extra.true_icon : col.extra.false_icon);
+        const Icon = iconName === 'x' ? X : Check;
+        return <Icon className={`size-4 ${colorClass}`} aria-label={truthy ? 'Yes' : 'No'} />;
     }
 
     if (col.type === 'image') {
