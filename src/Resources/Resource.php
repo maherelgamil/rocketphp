@@ -7,6 +7,9 @@ namespace MaherElGamil\Rocket\Resources;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use MaherElGamil\Rocket\Forms\Form;
+use MaherElGamil\Rocket\Resources\Pages\CreateRecord;
+use MaherElGamil\Rocket\Resources\Pages\EditRecord;
 use MaherElGamil\Rocket\Resources\Pages\ListRecords;
 use MaherElGamil\Rocket\Tables\Table;
 
@@ -87,8 +90,20 @@ abstract class Resource
     {
         return [
             'index' => ListRecords::class,
+            'create' => CreateRecord::class,
+            'edit' => EditRecord::class,
         ];
     }
 
     abstract public static function table(Table $table): Table;
+
+    public static function form(Form $form): Form
+    {
+        return $form;
+    }
+
+    public static function hasForm(): bool
+    {
+        return static::form(Form::make(static::class))->getSchema() !== [];
+    }
 }

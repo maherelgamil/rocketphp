@@ -1,5 +1,5 @@
-import { router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Search } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -53,9 +53,18 @@ type Props = {
     pagination: Pagination;
     filters: Filters;
     baseUrl: string;
+    editable?: boolean;
 };
 
-export default function DataTable({ schema, records, pagination, filters, baseUrl }: Props) {
+export default function DataTable({
+    schema,
+    records,
+    pagination,
+    filters,
+    baseUrl,
+    editable = false,
+}: Props) {
+    const totalColumns = schema.columns.length + (editable ? 1 : 0);
     const [search, setSearch] = useState(filters.search);
 
     const navigate = (next: Partial<Filters> & { page?: number }) => {
@@ -130,13 +139,14 @@ export default function DataTable({ schema, records, pagination, filters, baseUr
                                     </span>
                                 </TableHead>
                             ))}
+                            {editable && <TableHead className="w-16 text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {records.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={schema.columns.length}
+                                    colSpan={totalColumns}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No records found.
@@ -150,6 +160,23 @@ export default function DataTable({ schema, records, pagination, filters, baseUr
                                             {renderCell(col, row[col.name])}
                                         </TableCell>
                                     ))}
+                                    {editable && (
+                                        <TableCell className="text-right">
+                                            <Button
+                                                asChild
+                                                size="sm"
+                                                variant="ghost"
+                                                className="size-8 p-0"
+                                            >
+                                                <Link
+                                                    href={`${baseUrl}/${String(row._key)}/edit`}
+                                                    aria-label="Edit"
+                                                >
+                                                    <Pencil className="size-4" />
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))
                         )}

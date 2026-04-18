@@ -1,6 +1,6 @@
 # RocketPHP
 
-A Filament-style admin panel framework for Inertia.js + React.
+A declarative admin panel framework for Inertia.js + React.
 
 RocketPHP lets you declare admin panels in PHP (panels, resources, tables,
 forms) and renders them as Inertia pages using a self-contained React layer

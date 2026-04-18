@@ -49,6 +49,7 @@ class ListRecords extends Page
                 'slug' => $resource::getSlug(),
                 'label' => $resource::getLabel(),
                 'pluralLabel' => $resource::getPluralLabel(),
+                'hasForm' => $resource::hasForm(),
             ],
             'table' => $table->toArray(),
             'records' => $records,

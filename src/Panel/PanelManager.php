@@ -82,10 +82,41 @@ final class PanelManager
         }
 
         Route::group($attributes, function () use ($panel): void {
+            $resourceConstraint = '[a-z0-9\-_]+';
+            $recordConstraint = '[A-Za-z0-9\-_]+';
+            $defaults = ['panelId' => $panel->id()];
+
             Route::get('{resource}', [ResourceController::class, 'index'])
                 ->defaults('panelId', $panel->id())
                 ->name('resource.index')
-                ->where('resource', '[a-z0-9\-_]+');
+                ->where('resource', $resourceConstraint);
+
+            Route::get('{resource}/create', [ResourceController::class, 'create'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.create')
+                ->where('resource', $resourceConstraint);
+
+            Route::post('{resource}', [ResourceController::class, 'store'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.store')
+                ->where('resource', $resourceConstraint);
+
+            Route::get('{resource}/{record}/edit', [ResourceController::class, 'edit'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.edit')
+                ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint]);
+
+            Route::match(['put', 'patch'], '{resource}/{record}', [ResourceController::class, 'update'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.update')
+                ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint]);
+
+            Route::delete('{resource}/{record}', [ResourceController::class, 'destroy'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.destroy')
+                ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint]);
+
+            unset($defaults);
         });
     }
 }

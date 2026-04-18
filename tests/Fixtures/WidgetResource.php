@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Tests\Fixtures;
 
+use MaherElGamil\Rocket\Forms\Components\Select;
+use MaherElGamil\Rocket\Forms\Components\TextInput;
+use MaherElGamil\Rocket\Forms\Components\Textarea;
+use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Resources\Resource;
 use MaherElGamil\Rocket\Tables\Columns\BadgeColumn;
 use MaherElGamil\Rocket\Tables\Columns\TextColumn;
@@ -28,5 +32,17 @@ final class WidgetResource extends Resource
             ])
             ->searchable(['name'])
             ->defaultSort('id', 'desc');
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            TextInput::make('name')->required()->max(255),
+            Textarea::make('description')->nullable()->max(2000),
+            Select::make('status')->options([
+                'active' => 'Active',
+                'draft' => 'Draft',
+            ])->required(),
+        ]);
     }
 }
