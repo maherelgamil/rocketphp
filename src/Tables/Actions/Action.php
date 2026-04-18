@@ -16,6 +16,9 @@ abstract class Action
         protected readonly bool $requiresConfirmation = true,
         protected readonly bool $destructive = false,
         protected readonly ?string $icon = null,
+        protected readonly bool $link = false,
+        protected readonly ?string $routeSuffix = null,
+        protected readonly ?string $ability = null,
     ) {}
 
     public function getName(): string
@@ -35,6 +38,9 @@ abstract class Action
             'destructive' => $this->destructive,
             'icon' => $this->icon,
             'scope' => 'row',
+            'link' => $this->link,
+            'route_suffix' => $this->routeSuffix,
+            'ability' => $this->ability,
         ];
     }
 

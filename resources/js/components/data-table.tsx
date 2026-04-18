@@ -91,6 +91,9 @@ type RowActionSchema = {
     destructive: boolean;
     icon: string | null;
     scope: string;
+    link?: boolean;
+    route_suffix?: string | null;
+    ability?: string | null;
 };
 
 type TableFilterSchema =
@@ -465,29 +468,58 @@ export default function DataTable({
                                     {(editable || rowActions.length > 0) && (
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-1">
-                                                {editable && Boolean(row._can_update) && (
-                                                    <Button
-                                                        asChild
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="size-8 p-0"
-                                                    >
-                                                        <Link
-                                                            href={`${baseUrl}/${String(row._key)}/edit`}
-                                                            aria-label="Edit"
+                                                {editable &&
+                                                    Boolean(row._can_update) &&
+                                                    !rowActions.some((a) => a.name === 'edit') && (
+                                                        <Button
+                                                            asChild
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="size-8 p-0"
                                                         >
-                                                            <Pencil className="size-4" />
-                                                        </Link>
-                                                    </Button>
-                                                )}
+                                                            <Link
+                                                                href={`${baseUrl}/${String(row._key)}/edit`}
+                                                                aria-label="Edit"
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </Link>
+                                                        </Button>
+                                                    )}
                                                 {rowActions
                                                     .filter((a) => a.scope === 'row')
                                                     .map((action) => {
-                                                        if (action.name === 'delete' && !row._can_delete) {
+                                                        if (action.ability) {
+                                                            const flag = `_can_${action.ability}` as const;
+                                                            if (!row[flag]) return null;
+                                                        } else if (action.name === 'delete' && !row._can_delete) {
                                                             return null;
                                                         }
                                                         const Icon =
-                                                            action.icon === 'trash-2' ? Trash2 : MoreHorizontal;
+                                                            action.icon === 'pencil'
+                                                                ? Pencil
+                                                                : action.icon === 'trash-2'
+                                                                  ? Trash2
+                                                                  : MoreHorizontal;
+
+                                                        if (action.link && action.route_suffix) {
+                                                            return (
+                                                                <Button
+                                                                    key={action.name}
+                                                                    asChild
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="size-8 p-0"
+                                                                >
+                                                                    <Link
+                                                                        href={`${baseUrl}/${String(row._key)}/${action.route_suffix}`}
+                                                                        aria-label={action.label}
+                                                                    >
+                                                                        <Icon className="size-4" />
+                                                                    </Link>
+                                                                </Button>
+                                                            );
+                                                        }
+
                                                         return (
                                                             <Button
                                                                 key={action.name}
