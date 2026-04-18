@@ -4,3 +4,4 @@
 /.gitignore       export-ignore
 /phpunit.xml      export-ignore
 /PLAN.txt         export-ignore
+/CHANGELOG.md     export-ignore

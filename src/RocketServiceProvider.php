@@ -6,6 +6,7 @@ namespace MaherElGamil\Rocket;
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
+use MaherElGamil\Rocket\Commands\MakePanelCommand;
 use MaherElGamil\Rocket\Commands\MakeResourceCommand;
 use MaherElGamil\Rocket\Panel\PanelManager;
 
@@ -38,6 +39,7 @@ final class RocketServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                MakePanelCommand::class,
                 MakeResourceCommand::class,
             ]);
         }

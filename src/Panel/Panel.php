@@ -6,6 +6,7 @@ namespace MaherElGamil\Rocket\Panel;
 
 use Illuminate\Support\Str;
 use MaherElGamil\Rocket\Resources\Resource;
+use Symfony\Component\Finder\Finder;
 
 final class Panel
 {
@@ -144,6 +145,49 @@ final class Panel
     public function getResources(): array
     {
         return $this->resources;
+    }
+
+    /**
+     * Discover resource classes in a directory using convention-based scanning.
+     *
+     * Mirrors Filament's `discoverResources(in: ..., for: ...)` API.
+     */
+    public function discoverResources(string $in, string $for): self
+    {
+        if (! is_dir($in)) {
+            return $this;
+        }
+
+        $discovered = [];
+
+        foreach (Finder::create()->files()->in($in)->name('*.php') as $file) {
+            $relative = str_replace(
+                ['/', '.php'],
+                ['\\', ''],
+                ltrim(substr($file->getRealPath(), strlen($in)), DIRECTORY_SEPARATOR)
+            );
+
+            $class = rtrim($for, '\\').'\\'.ltrim($relative, '\\');
+
+            if (! class_exists($class)) {
+                continue;
+            }
+
+            if (! is_subclass_of($class, Resource::class)) {
+                continue;
+            }
+
+            $discovered[] = $class;
+        }
+
+        return $this->resources($discovered);
+    }
+
+    public function default(): self
+    {
+        config(['rocket.default_panel' => $this->id]);
+
+        return $this;
     }
 
     /**
