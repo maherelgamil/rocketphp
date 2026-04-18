@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Tests\Fixtures;
 
+use MaherElGamil\Rocket\Forms\Components\FileUpload;
 use MaherElGamil\Rocket\Forms\Components\Select;
 use MaherElGamil\Rocket\Forms\Components\TextInput;
 use MaherElGamil\Rocket\Forms\Components\Textarea;
@@ -43,6 +44,11 @@ final class WidgetResource extends Resource
                 'active' => 'Active',
                 'draft' => 'Draft',
             ])->required(),
+            FileUpload::make('avatar')
+                ->image()
+                ->directory('widgets')
+                ->maxSize(1024)
+                ->nullable(),
         ]);
     }
 }

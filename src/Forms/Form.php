@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Forms;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use MaherElGamil\Rocket\Forms\Components\Field;
 
 final class Form
@@ -83,6 +84,30 @@ final class Form
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    public function processSubmission(Request $request, array $validated, ?Model $record = null): array
+    {
+        $data = $validated;
+
+        foreach ($this->schema as $field) {
+            $name = $field->getName();
+            $result = $field->processSubmission($request, $data[$name] ?? null, $record);
+
+            if ($result === Field::SKIP) {
+                unset($data[$name]);
+
+                continue;
+            }
+
+            $data[$name] = $result;
+        }
+
+        return $data;
+    }
+
     public function extractState(Model $record): array
     {
         $state = [];

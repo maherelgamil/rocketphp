@@ -6,10 +6,13 @@ namespace MaherElGamil\Rocket\Forms\Components;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 abstract class Field
 {
+    public const SKIP = '__ROCKET_FIELD_SKIP__';
+
     protected ?string $label = null;
 
     protected ?string $placeholder = null;
@@ -182,6 +185,11 @@ abstract class Field
     public function getState(Model $record): mixed
     {
         return data_get($record, $this->name);
+    }
+
+    public function processSubmission(Request $request, mixed $value, ?Model $record): mixed
+    {
+        return $value;
     }
 
     abstract public function type(): string;

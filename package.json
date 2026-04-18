@@ -1,0 +1,38 @@
+{
+    "name": "@maherelgamil/rocketphp",
+    "version": "0.1.0",
+    "description": "Filament-style admin panel framework for Inertia.js + React.",
+    "license": "MIT",
+    "type": "module",
+    "author": "Maher El Gamil <maherelgamil@gmail.com>",
+    "keywords": [
+        "laravel",
+        "inertia",
+        "react",
+        "admin",
+        "panel",
+        "filament"
+    ],
+    "files": [
+        "resources/js"
+    ],
+    "exports": {
+        ".": "./resources/js/rocket.tsx",
+        "./rocket.css": "./resources/js/rocket.css",
+        "./pages/*": "./resources/js/pages/*.tsx",
+        "./components/*": "./resources/js/components/*.tsx",
+        "./lib/*": "./resources/js/lib/*.ts"
+    },
+    "peerDependencies": {
+        "@inertiajs/react": "^3.0.0",
+        "react": "^18 || ^19",
+        "react-dom": "^18 || ^19"
+    },
+    "dependencies": {
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "^0.475.0",
+        "radix-ui": "^1.4.3",
+        "tailwind-merge": "^3.0.1"
+    }
+}

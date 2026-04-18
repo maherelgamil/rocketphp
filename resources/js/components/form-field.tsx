@@ -117,6 +117,40 @@ function renderControl(
             );
         }
 
+        case 'file': {
+            const isImage = Boolean(field.extra.image);
+            const accepted = (field.extra.accepted_mimes as string[] | undefined) ?? [];
+            const currentPath = (field.extra.current as string | null | undefined) ?? null;
+            return (
+                <div className="space-y-2">
+                    <Input
+                        id={field.name}
+                        name={field.name}
+                        type="file"
+                        accept={
+                            accepted.length > 0
+                                ? accepted.map((m) => (m.includes('/') ? m : `.${m}`)).join(',')
+                                : isImage
+                                  ? 'image/*'
+                                  : undefined
+                        }
+                        disabled={field.disabled}
+                        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+                    />
+                    {value instanceof File && (
+                        <p className="text-xs text-muted-foreground">
+                            Selected: {value.name}
+                        </p>
+                    )}
+                    {!(value instanceof File) && currentPath && (
+                        <p className="text-xs text-muted-foreground">
+                            Current: <span className="font-mono">{currentPath}</span>
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
         case 'text':
         default: {
             const inputType = (field.extra.input_type as string | undefined) ?? 'text';

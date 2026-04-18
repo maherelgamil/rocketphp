@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
@@ -16,6 +18,7 @@ beforeEach(function () {
         $table->string('name');
         $table->text('description')->nullable();
         $table->string('status')->default('active');
+        $table->string('avatar')->nullable();
     });
 
     app(PanelManager::class)->register(
@@ -38,11 +41,13 @@ it('renders the create page with the form schema', function () {
     $payload = rocketInertia('/test-admin/widgets/create')->json();
 
     expect($payload['component'])->toBe('rocket/CreateRecord')
-        ->and($payload['props']['form']['fields'])->toHaveCount(3)
+        ->and($payload['props']['form']['fields'])->toHaveCount(4)
         ->and($payload['props']['form']['fields'][0]['type'])->toBe('text')
         ->and($payload['props']['form']['fields'][0]['name'])->toBe('name')
         ->and($payload['props']['form']['fields'][0]['required'])->toBeTrue()
-        ->and($payload['props']['form']['fields'][2]['type'])->toBe('select');
+        ->and($payload['props']['form']['fields'][2]['type'])->toBe('select')
+        ->and($payload['props']['form']['fields'][3]['type'])->toBe('file')
+        ->and($payload['props']['form']['fields'][3]['extra']['image'])->toBeTrue();
 });
 
 it('stores a new record via the resource store endpoint', function () {
@@ -95,6 +100,88 @@ it('updates a record via the resource update endpoint', function () {
     $response->assertRedirect('/test-admin/widgets');
     expect($widget->fresh()->name)->toBe('Gamma renamed')
         ->and($widget->fresh()->status)->toBe('active');
+});
+
+it('uploads a file and stores its path on create', function () {
+    Storage::fake('public');
+
+    $response = test()->post('/test-admin/widgets', [
+        'name' => 'Epsilon',
+        'status' => 'active',
+        'avatar' => UploadedFile::fake()->image('avatar.png'),
+    ]);
+
+    $response->assertRedirect('/test-admin/widgets');
+    $widget = Widget::query()->where('name', 'Epsilon')->firstOrFail();
+    expect($widget->avatar)->toStartWith('widgets/');
+    Storage::disk('public')->assertExists($widget->avatar);
+});
+
+it('preserves the existing file path on update when no new file is uploaded', function () {
+    Storage::fake('public');
+
+    $widget = Widget::query()->create([
+        'name' => 'Zeta',
+        'status' => 'active',
+        'avatar' => 'widgets/existing.png',
+    ]);
+
+    $response = test()->patch("/test-admin/widgets/{$widget->id}", [
+        'name' => 'Zeta renamed',
+        'status' => 'active',
+    ]);
+
+    $response->assertRedirect('/test-admin/widgets');
+    expect($widget->fresh()->avatar)->toBe('widgets/existing.png');
+});
+
+it('replaces the stored file when a new one is uploaded on update', function () {
+    Storage::fake('public');
+
+    $widget = Widget::query()->create([
+        'name' => 'Eta',
+        'status' => 'active',
+        'avatar' => 'widgets/old.png',
+    ]);
+
+    $response = test()->patch("/test-admin/widgets/{$widget->id}", [
+        'name' => 'Eta',
+        'status' => 'active',
+        'avatar' => UploadedFile::fake()->image('new.png'),
+    ]);
+
+    $response->assertRedirect('/test-admin/widgets');
+    expect($widget->fresh()->avatar)
+        ->toStartWith('widgets/')
+        ->not->toBe('widgets/old.png');
+});
+
+it('exposes the current file path via form schema on edit', function () {
+    $widget = Widget::query()->create([
+        'name' => 'Theta',
+        'status' => 'active',
+        'avatar' => 'widgets/theta.png',
+    ]);
+
+    $payload = rocketInertia("/test-admin/widgets/{$widget->id}/edit")->json();
+
+    $fileField = collect($payload['props']['form']['fields'])
+        ->firstWhere('name', 'avatar');
+
+    expect($fileField['extra']['current'])->toBe('widgets/theta.png')
+        ->and($payload['props']['state']['avatar'])->toBeNull();
+});
+
+it('rejects non-image uploads for image-only file fields', function () {
+    Storage::fake('public');
+
+    $response = test()->post('/test-admin/widgets', [
+        'name' => 'Iota',
+        'status' => 'active',
+        'avatar' => UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf'),
+    ]);
+
+    $response->assertInvalid(['avatar']);
 });
 
 it('deletes a record via the resource destroy endpoint', function () {

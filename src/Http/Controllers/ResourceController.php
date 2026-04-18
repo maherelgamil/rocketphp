@@ -44,6 +44,7 @@ final class ResourceController extends Controller
 
         $form = $resourceClass::form(Form::make($resourceClass));
         $data = $request->validate($form->getValidationRules());
+        $data = $form->processSubmission($request, $data);
 
         $resourceClass::query()->create($data);
 
@@ -61,6 +62,7 @@ final class ResourceController extends Controller
 
         $form = $resourceClass::form(Form::make($resourceClass));
         $data = $request->validate($form->getValidationRules($model));
+        $data = $form->processSubmission($request, $data, $model);
 
         $model->update($data);
 
