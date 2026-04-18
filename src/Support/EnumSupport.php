@@ -8,6 +8,7 @@ use BackedEnum;
 use InvalidArgumentException;
 use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\Contracts\HasColor;
+use MaherElGamil\Rocket\Support\Contracts\HasIcon;
 use MaherElGamil\Rocket\Support\Contracts\HasLabel;
 use UnitEnum;
 
@@ -55,6 +56,29 @@ final class EnumSupport
         }
 
         return $colors;
+    }
+
+    /**
+     * @param  class-string  $enumClass
+     * @return array<string, string>
+     */
+    public static function toIcons(string $enumClass): array
+    {
+        self::assertEnum($enumClass);
+
+        $icons = [];
+
+        foreach ($enumClass::cases() as $case) {
+            if ($case instanceof HasIcon) {
+                $icon = $case->getIcon();
+
+                if ($icon !== null) {
+                    $icons[self::valueOf($case)] = $icon;
+                }
+            }
+        }
+
+        return $icons;
     }
 
     public static function valueOf(UnitEnum $case): string

@@ -6,9 +6,10 @@ namespace MaherElGamil\Rocket\Tests\Fixtures;
 
 use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\Contracts\HasColor;
+use MaherElGamil\Rocket\Support\Contracts\HasIcon;
 use MaherElGamil\Rocket\Support\Contracts\HasLabel;
 
-enum WidgetStatus: string implements HasColor, HasLabel
+enum WidgetStatus: string implements HasColor, HasIcon, HasLabel
 {
     case Active = 'active';
     case Draft = 'draft';
@@ -28,6 +29,15 @@ enum WidgetStatus: string implements HasColor, HasLabel
         return match ($this) {
             self::Active => Color::Green,
             self::Draft => Color::Slate,
+            self::Archived => null,
+        };
+    }
+
+    public function getIcon(): ?string
+    {
+        return match ($this) {
+            self::Active => 'check-circle',
+            self::Draft => 'pencil',
             self::Archived => null,
         };
     }

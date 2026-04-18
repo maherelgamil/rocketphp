@@ -12,6 +12,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
+import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import { useMemo, useState } from 'react';
 import ConfirmDialog from './confirm-dialog';
 import { DateRangePicker } from './date-range-picker';
@@ -613,6 +614,29 @@ function renderCell(col: Column, value: unknown) {
         const iconName = String(truthy ? col.extra.true_icon : col.extra.false_icon);
         const Icon = iconName === 'x' ? X : Check;
         return <Icon className={`size-4 ${colorClass}`} aria-label={truthy ? 'Yes' : 'No'} />;
+    }
+
+    if (col.type === 'icon') {
+        const key = String(value);
+        const iconMap = (col.extra.icons ?? {}) as Record<string, string>;
+        const colorMap = (col.extra.colors ?? {}) as Record<string, string>;
+        const name = iconMap[key] ?? (col.extra.icon as string | null | undefined) ?? null;
+        if (!name) {
+            return <span className="text-muted-foreground">—</span>;
+        }
+        const token = colorMap[key] ?? (col.extra.color as string | null | undefined) ?? null;
+        const colorClass = token
+            ? (badgeColorClasses[token]?.match(/text-\S+/)?.[0] ?? 'text-muted-foreground')
+            : 'text-foreground';
+        const size = Number(col.extra.size ?? 20);
+        return (
+            <DynamicIcon
+                name={name as IconName}
+                size={size}
+                className={colorClass}
+                aria-label={key}
+            />
+        );
     }
 
     if (col.type === 'image') {
