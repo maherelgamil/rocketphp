@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Forms\Components;
 
+use MaherElGamil\Rocket\Support\EnumSupport;
+
 final class Select extends Field
 {
     /** @var array<string, string> */
@@ -17,6 +19,16 @@ final class Select extends Field
     public function options(array $options): self
     {
         $this->options = $options;
+
+        return $this;
+    }
+
+    /**
+     * @param  class-string  $enumClass
+     */
+    public function enum(string $enumClass): self
+    {
+        $this->options = EnumSupport::toOptions($enumClass);
 
         return $this;
     }

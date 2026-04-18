@@ -6,6 +6,7 @@ namespace MaherElGamil\Rocket\Tables\Filters;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use MaherElGamil\Rocket\Support\EnumSupport;
 
 final class SelectFilter implements Filter
 {
@@ -16,8 +17,18 @@ final class SelectFilter implements Filter
         private readonly string $name,
         private readonly string $attribute,
         private readonly string $label,
-        private readonly array $options,
+        private array $options = [],
     ) {}
+
+    /**
+     * @param  class-string  $enumClass
+     */
+    public function enum(string $enumClass): self
+    {
+        $this->options = EnumSupport::toOptions($enumClass);
+
+        return $this;
+    }
 
     public function apply(Builder $query, Request $request): void
     {
