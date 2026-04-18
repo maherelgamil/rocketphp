@@ -568,6 +568,23 @@ function renderCell(col: Column, value: unknown) {
         return <span className="text-muted-foreground">—</span>;
     }
 
+    if (col.type === 'image') {
+        const size = Number(col.extra.size ?? 40);
+        const circular = Boolean(col.extra.circular);
+        const src = String(value);
+        return (
+            <img
+                src={src}
+                alt=""
+                loading="lazy"
+                width={size}
+                height={size}
+                style={{ width: size, height: size, objectFit: 'cover' }}
+                className={circular ? 'rounded-full' : 'rounded-md'}
+            />
+        );
+    }
+
     if (col.type === 'badge') {
         const colors = (col.extra.colors ?? {}) as Record<string, string>;
         const color = colors[String(value)];
