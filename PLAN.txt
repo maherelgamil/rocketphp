@@ -5,39 +5,81 @@ A Filament-style admin panel framework for Inertia.js + React.
 Package: maherelgamil/rocketphp
 Namespace: MaherElGamil\Rocket
 
-Current status (CRUD + panel UX)
--------------------------------
+
+Current status
+--------------
+Panel + routing
 - Panel + PanelManager (fluent config, auto-registers routes on register)
 - Resource abstract: ListRecords, CreateRecord, EditRecord; store/update/destroy
-- Form + field components: TextInput, Textarea, Select, Toggle, DatePicker,
-  FileUpload; validation serialized to Inertia
-- Table + Column base + TextColumn + BadgeColumn; search, sort, pagination;
-  table filters (Select, Ternary, DateRange, Trashed); row + bulk actions
-- ResourceController + optional row/bulk action routes; dashboard route + widgets
+- ResourceController + optional row/bulk action routes
+- Dashboard route + widgets
 - Laravel Gate/Policy integration (viewAny, create, update, delete); nav filtered
+
+Forms
+- Field base class + abstract schema
+- Fields: TextInput, Textarea, Select, Checkbox, Radio, MultiSelect, Toggle,
+  DatePicker, FileUpload, BelongsTo, BelongsToMany
+- Section component for grouped/collapsible form layouts
+- Enum-driven options on Select / Radio / MultiSelect via EnumSupport
+- Field::afterSave hook + Form::applyAfterSave for post-save work (pivots etc.)
+- Validation serialized to Inertia
+
+Tables
+- Table + Column base
+- Columns: TextColumn, BadgeColumn, BooleanColumn, ImageColumn
+- BadgeColumn + EnumSupport + Color palette (16 Tailwind tokens, light/dark)
+- Filters: SelectFilter, TernaryFilter, TrashedFilter, DateRangeFilter
+- DateRangeFilter uses shadcn Popover + Calendar with preset sidebar
+  (Today, Yesterday, Last 7/30 days, This/Last month, This year, Clear)
+- Search, sort, pagination, per-page selector
+- Row actions: DeleteAction, EditAction (link-style, ability-gated)
+- Bulk actions: BulkDeleteAction
+
+Frontend
 - Self-contained React: rocket.tsx, list/create/edit, dashboard, data-table,
-  panel-shell, alert dialog, form fields
-- Blade root view: rocket::app; config/rocket.php
-- Pest feature tests (resources, forms, auth, actions, filters, dashboard)
+  panel-shell, form fields, confirm dialog
+- shadcn components: badge, button, card, input, label, select, skeleton,
+  switch, table, textarea, popover, calendar
+- Semantic palette mapping (badgeColorClasses) with dark: variants
+- Tailwind v4, Vite build
+
+Tests
+- Pest feature tests: resources, forms, auth, actions, filters, dashboard,
+  enum support, Color tokens, BelongsTo, BelongsToMany, FormSection,
+  ImageColumn, BooleanColumn, EditAction, simple fields (Checkbox/Radio/
+  MultiSelect) — 59+ tests, all passing
 
 
-Next steps (higher-level features)
-----------------------------------
-1. Global search across resources (e.g. Ctrl+K palette), policy-filtered
-2. Relation managers (Filament-style nested tables on edit pages)
-3. Notifications / toasts: ship minimal flash UI or document peer dependency
-4. Theming: CSS vars vs full design-token system
-5. i18n: publish-friendly lang files per panel
-6. Multi-tenancy helpers (optional stancl/tenancy integration)
-7. Publish + real-app smoke test; tag releases
+Near-term (small, high-leverage)
+--------------------------------
+1. ViewAction — read-only show page; mirrors EditAction as a link action but
+   points to a new /{record}/view route; needs a show page component
+2. Form Tabs — tabbed layout alongside Section (same tree semantics, tab UX)
+3. Searchable BelongsTo — AJAX endpoint for option lookup; reuses existing
+   ->searchable() flag on BelongsTo (currently only toggles frontend flag)
+4. KeyValue field — object<string,string> editor (useful for meta/config)
+5. IconColumn — single lucide icon per row, color tokens like BooleanColumn
+6. Flash / toast UI — wire Laravel session flashes to an Inertia toast stack
+
+
+Mid-term (higher surface area)
+------------------------------
+7. Global search — Ctrl+K command palette across resources, policy-filtered
+8. Relation managers — nested tables on edit pages (Post → comments table)
+9. Notifications center — panel-wide notification UI + unread count
+10. Theming — CSS vars + design tokens for consumer overrides
+11. i18n — publish-friendly lang files per panel
+12. Multi-tenancy helpers — optional stancl/tenancy integration
+
+
+Release prep
+------------
+13. Publish + host-app smoke test on every public-API change
+14. README + CHANGELOG in sync; SemVer tags on git
+
 
 Recommended order
 -----------------
-Ship complex UX (relations, global search) after stabilizing host-app
-integration. Keep README/CHANGELOG in sync when public APIs change.
-
-
-Open design questions
----------------------
-See "Next steps" above; same themes as before, now that core CRUD and panel
-landing page exist.
+Finish the small field/column gaps (1–6) first — they close visible UX
+surface cheaply. Then go wide with global search (7) and relation
+managers (8) before investing in theming/i18n/multi-tenancy.
