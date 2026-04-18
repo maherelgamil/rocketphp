@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ConfirmDialog from './confirm-dialog';
+import { DateRangePicker } from './date-range-picker';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -321,30 +322,15 @@ export default function DataTable({
                         }
                         if (f.type === 'date_range') {
                             return (
-                                <div key={f.name} className="flex flex-wrap gap-2">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-muted-foreground">
-                                            {f.label} from
-                                        </label>
-                                        <Input
-                                            type="date"
-                                            className="h-9 w-[160px]"
-                                            value={qString(f.from)}
-                                            onChange={(e) => navigate({ [f.from_key]: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-muted-foreground">
-                                            until
-                                        </label>
-                                        <Input
-                                            type="date"
-                                            className="h-9 w-[160px]"
-                                            value={qString(f.until)}
-                                            onChange={(e) => navigate({ [f.until_key]: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
+                                <DateRangePicker
+                                    key={f.name}
+                                    label={f.label}
+                                    from={qString(f.from)}
+                                    until={qString(f.until)}
+                                    onChange={(from, until) =>
+                                        navigate({ [f.from_key]: from, [f.until_key]: until })
+                                    }
+                                />
                             );
                         }
                         return null;
