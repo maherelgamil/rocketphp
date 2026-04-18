@@ -21,8 +21,8 @@ it('extracts options from a backed enum using HasLabel', function () {
 
 it('extracts colors from a backed enum using HasColor and skips null colors', function () {
     expect(EnumSupport::toColors(WidgetStatus::class))->toBe([
-        'active' => '#16a34a',
-        'draft' => '#64748b',
+        'active' => 'green',
+        'draft' => 'slate',
     ]);
 });
 
@@ -48,8 +48,8 @@ it('hydrates BadgeColumn colors from an enum and renders enum labels', function 
     $column = BadgeColumn::make('status')->enum(WidgetStatus::class);
 
     expect($column->toArray()['extra']['colors'])->toBe([
-        'active' => '#16a34a',
-        'draft' => '#64748b',
+        'active' => 'green',
+        'draft' => 'slate',
     ]);
 
     $record = new Widget(['status' => 'active']);
@@ -68,14 +68,14 @@ it('preserves enum value when BadgeColumn state is a UnitEnum instance', functio
     expect($column->render($record))->toBe('Draft Widget');
 });
 
-it('accepts Color instances in BadgeColumn colors() and normalizes to hex', function () {
+it('accepts Color instances in BadgeColumn colors() and serializes tokens, passing raw hex through', function () {
     $column = BadgeColumn::make('status')->colors([
         'active' => Color::Green,
         'draft' => '#abcdef',
     ]);
 
     expect($column->toArray()['extra']['colors'])->toBe([
-        'active' => '#16a34a',
+        'active' => 'green',
         'draft' => '#abcdef',
     ]);
 });

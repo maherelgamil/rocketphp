@@ -45,7 +45,7 @@ final class EnumSupport
                 $color = $case->getColor();
 
                 if ($color instanceof Color) {
-                    $color = $color->hex();
+                    $color = $color->value;
                 }
 
                 if ($color !== null) {

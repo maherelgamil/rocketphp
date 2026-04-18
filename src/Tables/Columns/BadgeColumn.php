@@ -23,7 +23,7 @@ final class BadgeColumn extends Column
     public function colors(array $colors): self
     {
         $this->colors = array_map(
-            static fn (Color|string $color): string => $color instanceof Color ? $color->hex() : $color,
+            static fn (Color|string $color): string => $color instanceof Color ? $color->value : $color,
             $colors,
         );
 
