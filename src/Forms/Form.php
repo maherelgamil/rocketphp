@@ -129,6 +129,16 @@ final class Form
     }
 
     /**
+     * @param  array<string, mixed>  $validated
+     */
+    public function applyAfterSave(Model $record, array $validated): void
+    {
+        foreach ($this->getFields() as $field) {
+            $field->afterSave($record, $validated[$field->getName()] ?? null);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function extractState(Model $record): array

@@ -45,10 +45,11 @@ final class ResourceController extends Controller
         $resourceClass::authorizeForRequest($request, 'create');
 
         $form = $resourceClass::form(Form::make($resourceClass));
-        $data = $request->validate($form->getValidationRules());
-        $data = $form->processSubmission($request, $data);
+        $validated = $request->validate($form->getValidationRules());
+        $data = $form->processSubmission($request, $validated);
 
-        $resourceClass::query()->create($data);
+        $model = $resourceClass::query()->create($data);
+        $form->applyAfterSave($model, $validated);
 
         return redirect()
             ->to($panel->url($resourceClass::getSlug()))
@@ -64,10 +65,11 @@ final class ResourceController extends Controller
         $resourceClass::authorizeForRequest($request, 'update', $model);
 
         $form = $resourceClass::form(Form::make($resourceClass));
-        $data = $request->validate($form->getValidationRules($model));
-        $data = $form->processSubmission($request, $data, $model);
+        $validated = $request->validate($form->getValidationRules($model));
+        $data = $form->processSubmission($request, $validated, $model);
 
         $model->update($data);
+        $form->applyAfterSave($model, $validated);
 
         return redirect()
             ->to($panel->url($resourceClass::getSlug()))

@@ -192,6 +192,11 @@ abstract class Field
         return $value;
     }
 
+    public function afterSave(Model $record, mixed $value): void
+    {
+        // no-op by default
+    }
+
     abstract public function type(): string;
 
     /**
