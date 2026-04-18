@@ -6,7 +6,11 @@ namespace MaherElGamil\Rocket\Tables;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use MaherElGamil\Rocket\Tables\Actions\Action;
+use MaherElGamil\Rocket\Tables\Actions\BulkAction;
 use MaherElGamil\Rocket\Tables\Columns\Column;
+use MaherElGamil\Rocket\Tables\Filters\Filter;
 
 final class Table
 {
@@ -15,6 +19,15 @@ final class Table
 
     /** @var array<int, string> */
     private array $searchable = [];
+
+    /** @var array<int, Filter> */
+    private array $filters = [];
+
+    /** @var array<string, Action> */
+    private array $rowActions = [];
+
+    /** @var array<string, BulkAction> */
+    private array $bulkActions = [];
 
     private ?string $defaultSort = null;
 
@@ -69,6 +82,81 @@ final class Table
         return $this;
     }
 
+    /**
+     * @param  array<int, Filter>  $filters
+     */
+    public function filters(array $filters): self
+    {
+        $this->filters = $filters;
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, Filter>
+     */
+    public function getFilters(): array
+    {
+        return $this->filters;
+    }
+
+    /**
+     * @param  array<int, Action>  $actions
+     */
+    public function actions(array $actions): self
+    {
+        foreach ($actions as $action) {
+            $this->rowActions[$action->getName()] = $action;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param  array<int, BulkAction>  $actions
+     */
+    public function bulkActions(array $actions): self
+    {
+        foreach ($actions as $action) {
+            $this->bulkActions[$action->getName()] = $action;
+        }
+
+        return $this;
+    }
+
+    public function getRowAction(string $name): ?Action
+    {
+        return $this->rowActions[$name] ?? null;
+    }
+
+    public function getBulkAction(string $name): ?BulkAction
+    {
+        return $this->bulkActions[$name] ?? null;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function rowActionsToArray(): array
+    {
+        return array_map(static fn (Action $a) => $a->toArray(), array_values($this->rowActions));
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function bulkActionsToArray(): array
+    {
+        return array_map(static fn (BulkAction $a) => $a->toArray(), array_values($this->bulkActions));
+    }
+
+    public function applyFilters(Builder $query, Request $request): void
+    {
+        foreach ($this->filters as $filter) {
+            $filter->apply($query, $request);
+        }
+    }
+
     public function applySearch(Builder $query, string $term): void
     {
         if ($this->searchable === []) {
@@ -105,6 +193,21 @@ final class Table
         }
 
         return $row;
+    }
+
+    public function applyDefaultSort(Builder $query): void
+    {
+        if ($this->defaultSort === null) {
+            return;
+        }
+
+        foreach ($this->columns as $col) {
+            if ($col->getName() === $this->defaultSort && $col->isSortable()) {
+                $query->orderBy($this->defaultSort, $this->defaultSortDirection);
+
+                return;
+            }
+        }
     }
 
     /**

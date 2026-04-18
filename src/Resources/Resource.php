@@ -6,6 +6,8 @@ namespace MaherElGamil\Rocket\Resources;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Resources\Pages\CreateRecord;
@@ -105,5 +107,51 @@ abstract class Resource
     public static function hasForm(): bool
     {
         return static::form(Form::make(static::class))->getSchema() !== [];
+    }
+
+    /**
+     * Authorize a policy ability for the resource model (abort403 on failure).
+     *
+     * @param  'viewAny'|'create'|'update'|'delete'  $ability
+     */
+    public static function authorizeForRequest(Request $request, string $ability, ?Model $model = null): void
+    {
+        $user = $request->user();
+        if ($user === null) {
+            abort(403);
+        }
+
+        $modelClass = static::getModel();
+        $gate = Gate::forUser($user);
+
+        match ($ability) {
+            'viewAny' => $gate->authorize('viewAny', $modelClass),
+            'create' => $gate->authorize('create', $modelClass),
+            'update' => $gate->authorize('update', $model ?? throw new \InvalidArgumentException('Model required for update authorization.')),
+            'delete' => $gate->authorize('delete', $model ?? throw new \InvalidArgumentException('Model required for delete authorization.')),
+            default => throw new \InvalidArgumentException("Unknown Rocket authorization ability [{$ability}]."),
+        };
+    }
+
+    /**
+     * @param  'viewAny'|'create'|'update'|'delete'  $ability
+     */
+    public static function can(Request $request, string $ability, ?Model $model = null): bool
+    {
+        $user = $request->user();
+        if ($user === null) {
+            return false;
+        }
+
+        $modelClass = static::getModel();
+        $gate = Gate::forUser($user);
+
+        return match ($ability) {
+            'viewAny' => $gate->check('viewAny', $modelClass),
+            'create' => $gate->check('create', $modelClass),
+            'update' => $model !== null && $gate->check('update', $model),
+            'delete' => $model !== null && $gate->check('delete', $model),
+            default => false,
+        };
     }
 }

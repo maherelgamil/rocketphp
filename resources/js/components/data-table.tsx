@@ -1,10 +1,27 @@
 import { Link, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Search } from 'lucide-react';
-import { useState } from 'react';
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    Copy,
+    MoreHorizontal,
+    Pencil,
+    Search,
+    Trash2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import ConfirmDialog from './confirm-dialog';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from './ui/select';
 import {
     Table,
     TableBody,
@@ -40,52 +57,112 @@ type Pagination = {
     to: number | null;
 };
 
-type Filters = {
+type ListFilters = {
     search: string;
     sort: string;
     direction: 'asc' | 'desc';
     per_page: number;
 };
 
+type RowActionSchema = {
+    name: string;
+    label: string;
+    requires_confirmation: boolean;
+    destructive: boolean;
+    icon: string | null;
+    scope: string;
+};
+
+type TableFilterSchema =
+    | {
+          type: 'select';
+          name: string;
+          query_key: string;
+          label: string;
+          options: Record<string, string>;
+          value: string | string[] | null | undefined;
+      }
+    | {
+          type: 'ternary';
+          name: string;
+          query_key: string;
+          label: string;
+          value: string | string[] | null | undefined;
+      }
+    | {
+          type: 'date_range';
+          name: string;
+          label: string;
+          from_key: string;
+          until_key: string;
+          from: string | string[] | null | undefined;
+          until: string | string[] | null | undefined;
+      }
+    | {
+          type: 'trashed';
+          name: string;
+          query_key: string;
+          label: string;
+          options: Record<string, string>;
+          value: string | string[] | null | undefined;
+      };
+
 type Props = {
     schema: Schema;
     records: Row[];
     pagination: Pagination;
-    filters: Filters;
+    filters: ListFilters;
+    /** Full query string params to preserve across navigations */
+    query: Record<string, unknown>;
     baseUrl: string;
     editable?: boolean;
+    rowActions?: RowActionSchema[];
+    bulkActions?: RowActionSchema[];
+    tableFilters?: TableFilterSchema[];
+    perPageOptions?: number[];
 };
+
+function qString(val: unknown): string {
+    if (val === null || val === undefined) return '';
+    if (Array.isArray(val)) return val.length ? String(val[0]) : '';
+    return String(val);
+}
 
 export default function DataTable({
     schema,
     records,
     pagination,
     filters,
+    query,
     baseUrl,
     editable = false,
+    rowActions = [],
+    bulkActions = [],
+    tableFilters = [],
+    perPageOptions = [10, 25, 50, 100],
 }: Props) {
-    const totalColumns = schema.columns.length + (editable ? 1 : 0);
+    const hasBulk = bulkActions.length > 0;
+    const [selected, setSelected] = useState<Set<string>>(() => new Set());
     const [search, setSearch] = useState(filters.search);
+    const [confirmAction, setConfirmAction] = useState<{
+        kind: 'row' | 'bulk';
+        action: RowActionSchema;
+        row?: Row;
+    } | null>(null);
 
-    const navigate = (next: Partial<Filters> & { page?: number }) => {
-        router.get(
-            baseUrl,
-            {
-                search: next.search ?? filters.search,
-                sort: next.sort ?? filters.sort,
-                direction: next.direction ?? filters.direction,
-                per_page: next.per_page ?? filters.per_page,
-                page: next.page,
-            },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+    const navigate = (patch: Record<string, unknown> & { page?: number }) => {
+        const next: Record<string, unknown> = { ...query, ...patch };
+        if (patch.page === undefined) {
+            next.page = 1;
+        }
+        router.get(baseUrl, next, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const toggleSort = (column: Column) => {
         if (!column.sortable) return;
         const nextDirection: 'asc' | 'desc' =
             filters.sort === column.name && filters.direction === 'asc' ? 'desc' : 'asc';
-        navigate({ sort: column.name, direction: nextDirection, page: 1 });
+        navigate({ sort: column.name, direction: nextDirection });
     };
 
     const sortIcon = (column: Column) => {
@@ -100,33 +177,240 @@ export default function DataTable({
         );
     };
 
+    const selectionColumn = hasBulk ? 1 : 0;
+    const actionColumn =
+        (editable ? 1 : 0) + (rowActions.filter((a) => a.scope === 'row').length > 0 ? 1 : 0);
+    const totalColumns = schema.columns.length + selectionColumn + actionColumn;
+
+    const allIds = useMemo(() => records.map((r) => String(r._key)), [records]);
+    const allSelected = hasBulk && records.length > 0 && selected.size === records.length;
+
+    const toggleAll = () => {
+        if (allSelected) {
+            setSelected(new Set());
+        } else {
+            setSelected(new Set(allIds));
+        }
+    };
+
+    const toggleRow = (id: string) => {
+        const next = new Set(selected);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelected(next);
+    };
+
+    const runRowAction = (action: RowActionSchema, row: Row) => {
+        if (action.requires_confirmation) {
+            setConfirmAction({ kind: 'row', action, row });
+            return;
+        }
+        submitRowAction(action, row);
+    };
+
+    const submitRowAction = (action: RowActionSchema, row: Row) => {
+        const url = `${baseUrl}/${String(row._key)}/actions/${action.name}`;
+        router.post(url, {});
+    };
+
+    const submitBulkAction = (action: RowActionSchema) => {
+        const url = `${baseUrl}/bulk-actions/${action.name}`;
+        router.post(url, { ids: Array.from(selected) });
+    };
+
+    const bulkDelete = bulkActions.find((a) => a.name === 'bulk-delete');
+
     return (
         <div className="space-y-4">
-            {schema.searchable && (
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        navigate({ search, page: 1 });
-                    }}
-                    className="flex max-w-sm items-center gap-2"
-                >
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Search..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9"
-                        />
-                    </div>
-                </form>
+            {tableFilters.length > 0 && (
+                <div className="flex flex-wrap items-end gap-3">
+                    {tableFilters.map((f) => {
+                        if (f.type === 'select') {
+                            return (
+                                <div key={f.name} className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground">
+                                        {f.label}
+                                    </label>
+                                    <Select
+                                        value={qString(f.value) || '__all__'}
+                                        onValueChange={(v) =>
+                                            navigate({
+                                                [f.query_key]: v === '__all__' ? '' : v,
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger className="h-9 w-[180px]">
+                                            <SelectValue placeholder="All" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="__all__">All</SelectItem>
+                                            {Object.entries(f.options).map(([k, label]) => (
+                                                <SelectItem key={k} value={k}>
+                                                    {label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            );
+                        }
+                        if (f.type === 'ternary') {
+                            return (
+                                <div key={f.name} className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground">
+                                        {f.label}
+                                    </label>
+                                    <Select
+                                        value={qString(f.value) || 'all'}
+                                        onValueChange={(v) => navigate({ [f.query_key]: v === 'all' ? '' : v })}
+                                    >
+                                        <SelectTrigger className="h-9 w-[160px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="yes">Yes</SelectItem>
+                                            <SelectItem value="no">No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            );
+                        }
+                        if (f.type === 'trashed') {
+                            return (
+                                <div key={f.name} className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground">
+                                        {f.label}
+                                    </label>
+                                    <Select
+                                        value={qString(f.value) || 'without'}
+                                        onValueChange={(v) => navigate({ [f.query_key]: v })}
+                                    >
+                                        <SelectTrigger className="h-9 w-[200px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(f.options).map(([k, label]) => (
+                                                <SelectItem key={k} value={k}>
+                                                    {label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            );
+                        }
+                        if (f.type === 'date_range') {
+                            return (
+                                <div key={f.name} className="flex flex-wrap gap-2">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-muted-foreground">
+                                            {f.label} from
+                                        </label>
+                                        <Input
+                                            type="date"
+                                            className="h-9 w-[160px]"
+                                            value={qString(f.from)}
+                                            onChange={(e) => navigate({ [f.from_key]: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-muted-foreground">
+                                            until
+                                        </label>
+                                        <Input
+                                            type="date"
+                                            className="h-9 w-[160px]"
+                                            value={qString(f.until)}
+                                            onChange={(e) => navigate({ [f.until_key]: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })}
+                </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4">
+                {schema.searchable && (
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            navigate({ search });
+                        }}
+                        className="flex max-w-sm flex-1 items-center gap-2"
+                    >
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Search..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <Button type="submit" size="sm" variant="secondary">
+                            Search
+                        </Button>
+                    </form>
+                )}
+
+                <div className="ml-auto flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Per page</span>
+                    <Select
+                        value={String(filters.per_page)}
+                        onValueChange={(v) => navigate({ per_page: Number(v) })}
+                    >
+                        <SelectTrigger className="h-9 w-[88px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {perPageOptions.map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                    {n}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            {hasBulk && bulkDelete && selected.size > 0 && (
+                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">{selected.size} selected</span>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() =>
+                            bulkDelete.requires_confirmation
+                                ? setConfirmAction({ kind: 'bulk', action: bulkDelete })
+                                : submitBulkAction(bulkDelete)
+                        }
+                    >
+                        {bulkDelete.label}
+                    </Button>
+                </div>
             )}
 
             <Card className="overflow-hidden p-0">
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            {hasBulk && (
+                                <TableHead className="w-10">
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        onChange={toggleAll}
+                                        aria-label="Select all"
+                                        className="size-4 rounded border"
+                                    />
+                                </TableHead>
+                            )}
                             {schema.columns.map((col) => (
                                 <TableHead
                                     key={col.name}
@@ -139,7 +423,9 @@ export default function DataTable({
                                     </span>
                                 </TableHead>
                             ))}
-                            {editable && <TableHead className="w-16 text-right">Actions</TableHead>}
+                            {(editable || rowActions.length > 0) && (
+                                <TableHead className="w-24 text-right">Actions</TableHead>
+                            )}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -155,26 +441,63 @@ export default function DataTable({
                         ) : (
                             records.map((row) => (
                                 <TableRow key={String(row._key)}>
+                                    {hasBulk && (
+                                        <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                checked={selected.has(String(row._key))}
+                                                onChange={() => toggleRow(String(row._key))}
+                                                aria-label="Select row"
+                                                className="size-4 rounded border"
+                                            />
+                                        </TableCell>
+                                    )}
                                     {schema.columns.map((col) => (
                                         <TableCell key={col.name}>
                                             {renderCell(col, row[col.name])}
                                         </TableCell>
                                     ))}
-                                    {editable && (
+                                    {(editable || rowActions.length > 0) && (
                                         <TableCell className="text-right">
-                                            <Button
-                                                asChild
-                                                size="sm"
-                                                variant="ghost"
-                                                className="size-8 p-0"
-                                            >
-                                                <Link
-                                                    href={`${baseUrl}/${String(row._key)}/edit`}
-                                                    aria-label="Edit"
-                                                >
-                                                    <Pencil className="size-4" />
-                                                </Link>
-                                            </Button>
+                                            <div className="flex justify-end gap-1">
+                                                {editable && Boolean(row._can_update) && (
+                                                    <Button
+                                                        asChild
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="size-8 p-0"
+                                                    >
+                                                        <Link
+                                                            href={`${baseUrl}/${String(row._key)}/edit`}
+                                                            aria-label="Edit"
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </Link>
+                                                    </Button>
+                                                )}
+                                                {rowActions
+                                                    .filter((a) => a.scope === 'row')
+                                                    .map((action) => {
+                                                        if (action.name === 'delete' && !row._can_delete) {
+                                                            return null;
+                                                        }
+                                                        const Icon =
+                                                            action.icon === 'trash-2' ? Trash2 : MoreHorizontal;
+                                                        return (
+                                                            <Button
+                                                                key={action.name}
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="size-8 p-0"
+                                                                aria-label={action.label}
+                                                                onClick={() => runRowAction(action, row)}
+                                                            >
+                                                                <Icon className="size-4" />
+                                                            </Button>
+                                                        );
+                                                    })}
+                                            </div>
                                         </TableCell>
                                     )}
                                 </TableRow>
@@ -209,6 +532,28 @@ export default function DataTable({
                     </div>
                 </div>
             </Card>
+
+            <ConfirmDialog
+                open={confirmAction !== null}
+                title={confirmAction?.action.label ?? 'Confirm'}
+                description={
+                    confirmAction?.kind === 'bulk'
+                        ? `Delete ${selected.size} selected record(s)? This cannot be undone.`
+                        : 'Delete this record? This cannot be undone.'
+                }
+                confirmLabel={confirmAction?.action.label ?? 'Confirm'}
+                destructive={confirmAction?.action.destructive ?? true}
+                onCancel={() => setConfirmAction(null)}
+                onConfirm={() => {
+                    if (!confirmAction) return;
+                    if (confirmAction.kind === 'bulk') {
+                        submitBulkAction(confirmAction.action);
+                    } else if (confirmAction.row) {
+                        submitRowAction(confirmAction.action, confirmAction.row);
+                    }
+                    setConfirmAction(null);
+                }}
+            />
         </div>
     );
 }
@@ -231,5 +576,26 @@ function renderCell(col: Column, value: unknown) {
         return <Badge variant="secondary">{String(value)}</Badge>;
     }
 
-    return <span>{String(value)}</span>;
+    const copyable = Boolean(col.extra.copyable);
+    const text = String(value);
+
+    if (copyable) {
+        return (
+            <span className="inline-flex items-center gap-1">
+                <span>{text}</span>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="text-muted-foreground"
+                    aria-label={`Copy ${col.label}`}
+                    onClick={() => void navigator.clipboard.writeText(text)}
+                >
+                    <Copy className="size-3" />
+                </Button>
+            </span>
+        );
+    }
+
+    return <span>{text}</span>;
 }

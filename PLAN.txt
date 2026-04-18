@@ -5,81 +5,39 @@ A Filament-style admin panel framework for Inertia.js + React.
 Package: maherelgamil/rocketphp
 Namespace: MaherElGamil\Rocket
 
-Current status (MVP shipped)
-----------------------------
+Current status (CRUD + panel UX)
+-------------------------------
 - Panel + PanelManager (fluent config, auto-registers routes on register)
-- Resource abstract + ListRecords page
-- Table + Column base + TextColumn + BadgeColumn (schema serialization)
-- ResourceController dispatches panel+slug -> page class -> Inertia::render()
-- Artisan: rocket:make-resource {name} --model=
-- Self-contained React layer: rocket.tsx entry, list-records, panel-shell,
-  data-table components, rocket.css
-- Blade root view: rocket::app
-- Laravel-style config/rocket.php (default_panel, inertia, assets, routes,
-  pagination, brand) with env() overrides
-- Pest feature tests: 4/4 passing (schema, render, search, sort)
+- Resource abstract: ListRecords, CreateRecord, EditRecord; store/update/destroy
+- Form + field components: TextInput, Textarea, Select, Toggle, DatePicker,
+  FileUpload; validation serialized to Inertia
+- Table + Column base + TextColumn + BadgeColumn; search, sort, pagination;
+  table filters (Select, Ternary, DateRange, Trashed); row + bulk actions
+- ResourceController + optional row/bulk action routes; dashboard route + widgets
+- Laravel Gate/Policy integration (viewAny, create, update, delete); nav filtered
+- Self-contained React: rocket.tsx, list/create/edit, dashboard, data-table,
+  panel-shell, alert dialog, form fields
+- Blade root view: rocket::app; config/rocket.php
+- Pest feature tests (resources, forms, auth, actions, filters, dashboard)
 
 
-Next steps (ordered by impact)
-------------------------------
-
-1. Forms + Create/Edit pages  [BIGGEST GAP]
-   - Form class, form components: TextInput, Textarea, Select, Toggle,
-     DatePicker, FileUpload
-   - Validation-rule serialization from PHP to Inertia props
-   - CreateRecord + EditRecord pages, routes, controllers
-   - React: useForm wiring, field components matching the schema
-   - Turns Rocket from "list viewer" into a real CRUD admin.
-
-2. Authorization + Policies
-   - Resource::can($ability, $record) via Gate/Policy
-   - Filter navigation and row actions by permission
-   - 403 on unauthorized pages
-   - Required before production use.
-
-3. Row + bulk actions
-   - Action, DeleteAction, EditAction, BulkAction
-   - Confirmation dialogs on the React side
-   - Server endpoints registered per resource
-   - Pairs naturally with #1.
-
-4. Filters
-   - SelectFilter, TernaryFilter, DateRangeFilter, TrashedFilter
-   - Applied in Table::applyFilters()
-   - Filter bar in DataTable
-   - Low effort, high UX value.
-
-5. Dashboard + Widgets
-   - Dashboard page, StatsOverviewWidget, ChartWidget, TableWidget
-   - Gives panels a landing page that isn't a resource list.
-
-6. Publish + real-app smoke test
-   - php artisan vendor:publish --tag=rocket-assets
-   - Wire entry into host vite.config.ts
-   - Register a real UserResource, visit /admin/users in browser
-   - Catches integration issues the tests cannot.
-
-7. Polish for OSS
-   - Package-level tests/ + CI (GitHub Actions + Testbench)
-   - README, LICENSE, CHANGELOG
-   - Tag 0.1.0
-   - Needed before the package is shareable.
-
+Next steps (higher-level features)
+----------------------------------
+1. Global search across resources (e.g. Ctrl+K palette), policy-filtered
+2. Relation managers (Filament-style nested tables on edit pages)
+3. Notifications / toasts: ship minimal flash UI or document peer dependency
+4. Theming: CSS vars vs full design-token system
+5. i18n: publish-friendly lang files per panel
+6. Multi-tenancy helpers (optional stancl/tenancy integration)
+7. Publish + real-app smoke test; tag releases
 
 Recommended order
 -----------------
-1 -> 3 -> 4 -> 2 -> 6 -> 7 -> 5
-
-Forms unlock the "real admin" story. Authorization layers on cleanly once the
-CRUD surface exists. Smoke-testing in the host app catches what unit/feature
-tests can't. OSS polish is last so we don't iterate on docs while APIs move.
+Ship complex UX (relations, global search) after stabilizing host-app
+integration. Keep README/CHANGELOG in sync when public APIs change.
 
 
-Open design questions (to resolve along the way)
-------------------------------------------------
-- Global search across resources (Ctrl+K palette)?
-- Relation managers (Filament-style nested tables on Edit pages)?
-- Notifications / toasts: ship our own or require a peer dep?
-- Theming: CSS vars only, or a full design-token system?
-- i18n: publish-friendly lang files per panel?
-- Multi-tenancy helpers (optional stancl/tenancy integration)?
+Open design questions
+---------------------
+See "Next steps" above; same themes as before, now that core CRUD and panel
+landing page exist.

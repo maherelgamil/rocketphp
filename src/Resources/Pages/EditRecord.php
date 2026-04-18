@@ -21,6 +21,8 @@ class EditRecord extends Page
         /** @var Model $record */
         $record = $resource::query()->findOrFail($request->route('record'));
 
+        $resource::authorizeForRequest($request, 'update', $record);
+
         $form = $resource::form(Form::make($resource));
 
         return Inertia::render(static::component(), [
@@ -29,6 +31,10 @@ class EditRecord extends Page
                 'slug' => $resource::getSlug(),
                 'label' => $resource::getLabel(),
                 'pluralLabel' => $resource::getPluralLabel(),
+                'can' => [
+                    'update' => $resource::can($request, 'update', $record),
+                    'delete' => $resource::can($request, 'delete', $record),
+                ],
             ],
             'form' => $form->toArray($record),
             'record' => ['key' => $record->getKey()],

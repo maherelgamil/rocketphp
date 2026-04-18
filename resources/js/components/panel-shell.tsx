@@ -1,6 +1,41 @@
 import { Link } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
+import {
+    Box,
+    FileText,
+    FolderTree,
+    LayoutDashboard,
+    ListTodo,
+    Package,
+    Settings,
+    Tags,
+    Users,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../lib/utils';
+
+const NAV_ICONS: Record<string, LucideIcon> = {
+    'layout-dashboard': LayoutDashboard,
+    package: Package,
+    box: Box,
+    users: Users,
+    settings: Settings,
+    'file-text': FileText,
+    'folder-tree': FolderTree,
+    tags: Tags,
+    'list-todo': ListTodo,
+};
+
+function NavIcon({ name }: { name: string | null | undefined }) {
+    if (!name) {
+        return null;
+    }
+    const Icon = NAV_ICONS[name];
+    if (!Icon) {
+        return null;
+    }
+    return <Icon className="mr-2 size-4 shrink-0 opacity-80" aria-hidden />;
+}
 
 type NavItem = {
     label: string;
@@ -57,6 +92,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                                                     : 'text-muted-foreground',
                                             )}
                                         >
+                                            <NavIcon name={item.icon} />
                                             {item.label}
                                         </Link>
                                     </li>

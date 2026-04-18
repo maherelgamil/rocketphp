@@ -6,6 +6,7 @@ namespace MaherElGamil\Rocket\Panel;
 
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use MaherElGamil\Rocket\Http\Controllers\DashboardController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
 use MaherElGamil\Rocket\Http\Middleware\HandleRocketRequests;
 
@@ -85,6 +86,22 @@ final class PanelManager
             $resourceConstraint = '[a-z0-9\-_]+';
             $recordConstraint = '[A-Za-z0-9\-_]+';
             $defaults = ['panelId' => $panel->id()];
+
+            Route::get('dashboard', [DashboardController::class, 'show'])
+                ->defaults('panelId', $panel->id())
+                ->name('dashboard');
+
+            Route::post('{resource}/bulk-actions/{bulkAction}', [ResourceController::class, 'bulkAction'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.bulk-action')
+                ->where('resource', $resourceConstraint)
+                ->where('bulkAction', '[a-z0-9\-_]+');
+
+            Route::post('{resource}/{record}/actions/{action}', [ResourceController::class, 'rowAction'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.row-action')
+                ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint])
+                ->where('action', '[a-z0-9\-_]+');
 
             Route::get('{resource}', [ResourceController::class, 'index'])
                 ->defaults('panelId', $panel->id())

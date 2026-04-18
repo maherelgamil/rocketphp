@@ -14,6 +14,8 @@ class CreateRecord extends Page
 {
     public function handle(Request $request, Panel $panel, string $resource): Response
     {
+        $resource::authorizeForRequest($request, 'create');
+
         $form = $resource::form(Form::make($resource));
 
         return Inertia::render(static::component(), [
@@ -22,6 +24,9 @@ class CreateRecord extends Page
                 'slug' => $resource::getSlug(),
                 'label' => $resource::getLabel(),
                 'pluralLabel' => $resource::getPluralLabel(),
+                'can' => [
+                    'create' => $resource::can($request, 'create'),
+                ],
             ],
             'form' => $form->toArray(),
             'record' => null,

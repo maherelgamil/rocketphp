@@ -14,6 +14,8 @@ class ListRecords extends Page
 {
     public function handle(Request $request, Panel $panel, string $resource): Response
     {
+        $resource::authorizeForRequest($request, 'viewAny');
+
         $table = $resource::table(Table::make($resource));
 
         $search = (string) $request->query('search', '');
@@ -27,7 +29,16 @@ class ListRecords extends Page
             ),
         );
 
+        $perPageOptions = array_values(array_unique(array_filter(
+            array_map('intval', (array) config('rocket.pagination.per_page_options', [10, 25, 50, 100])),
+            fn (int $n) => $n >= (int) config('rocket.pagination.min_per_page', 1)
+                && $n <= (int) config('rocket.pagination.max_per_page', 100),
+        )));
+        sort($perPageOptions);
+
         $query = $resource::query();
+
+        $table->applyFilters($query, $request);
 
         if ($search !== '') {
             $table->applySearch($query, $search);
@@ -35,13 +46,27 @@ class ListRecords extends Page
 
         if ($sort !== '') {
             $table->applySort($query, $sort, $direction);
+        } else {
+            $table->applyDefaultSort($query);
         }
 
         $paginator = $query->paginate($perPage)->withQueryString();
 
         $records = $paginator->getCollection()
-            ->map(fn ($record) => $table->renderRow($record))
+            ->map(function ($record) use ($table, $resource, $request) {
+                $row = $table->renderRow($record);
+                $row['_can_update'] = $resource::hasForm()
+                    && $resource::can($request, 'update', $record);
+                $row['_can_delete'] = $resource::can($request, 'delete', $record);
+
+                return $row;
+            })
             ->all();
+
+        $tableFilters = array_map(
+            static fn ($filter) => $filter->toSchema($request),
+            $table->getFilters(),
+        );
 
         return Inertia::render(static::component(), [
             'panel' => $panel->toSharedProps(),
@@ -50,8 +75,14 @@ class ListRecords extends Page
                 'label' => $resource::getLabel(),
                 'pluralLabel' => $resource::getPluralLabel(),
                 'hasForm' => $resource::hasForm(),
+                'can' => [
+                    'create' => $resource::can($request, 'create'),
+                ],
             ],
             'table' => $table->toArray(),
+            'row_actions' => $table->rowActionsToArray(),
+            'bulk_actions' => $table->bulkActionsToArray(),
+            'table_filters' => $tableFilters,
             'records' => $records,
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
@@ -61,12 +92,14 @@ class ListRecords extends Page
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
             ],
+            'per_page_options' => $perPageOptions,
             'filters' => [
                 'search' => $search,
                 'sort' => $sort,
                 'direction' => $direction,
                 'per_page' => $perPage,
             ],
+            'query' => $request->query(),
         ]);
     }
 

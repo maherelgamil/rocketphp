@@ -80,6 +80,7 @@ return [
         'per_page' => 25,
         'min_per_page' => 1,
         'max_per_page' => 100,
+        'per_page_options' => [10, 25, 50, 100],
     ],
 
     /*

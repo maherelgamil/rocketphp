@@ -11,6 +11,7 @@ use Illuminate\Routing\Controller;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
+use MaherElGamil\Rocket\Tables\Table;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class ResourceController extends Controller
@@ -41,6 +42,7 @@ final class ResourceController extends Controller
     public function store(Request $request, string $resource): RedirectResponse
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);
+        $resourceClass::authorizeForRequest($request, 'create');
 
         $form = $resourceClass::form(Form::make($resourceClass));
         $data = $request->validate($form->getValidationRules());
@@ -59,6 +61,7 @@ final class ResourceController extends Controller
 
         /** @var Model $model */
         $model = $resourceClass::query()->findOrFail($record);
+        $resourceClass::authorizeForRequest($request, 'update', $model);
 
         $form = $resourceClass::form(Form::make($resourceClass));
         $data = $request->validate($form->getValidationRules($model));
@@ -77,12 +80,70 @@ final class ResourceController extends Controller
 
         /** @var Model $model */
         $model = $resourceClass::query()->findOrFail($record);
+        $resourceClass::authorizeForRequest($request, 'delete', $model);
 
         $model->delete();
 
         return redirect()
             ->to($panel->url($resourceClass::getSlug()))
             ->with('success', $resourceClass::getLabel().' deleted.');
+    }
+
+    public function rowAction(Request $request, string $resource, string|int $record, string $action): RedirectResponse
+    {
+        [$panel, $resourceClass] = $this->resolve($request, $resource);
+
+        $table = $resourceClass::table(Table::make($resourceClass));
+        $rowAction = $table->getRowAction($action);
+        if ($rowAction === null) {
+            abort(404);
+        }
+
+        /** @var Model $model */
+        $model = $resourceClass::query()->findOrFail($record);
+        $rowAction->authorize($request, $resourceClass, $model);
+        $rowAction->handle($model);
+
+        $message = match ($action) {
+            'delete' => $resourceClass::getLabel().' deleted.',
+            default => 'Action completed.',
+        };
+
+        return redirect()
+            ->to($panel->url($resourceClass::getSlug()))
+            ->with('success', $message);
+    }
+
+    public function bulkAction(Request $request, string $resource, string $bulkAction): RedirectResponse
+    {
+        [$panel, $resourceClass] = $this->resolve($request, $resource);
+
+        $table = $resourceClass::table(Table::make($resourceClass));
+        $bulk = $table->getBulkAction($bulkAction);
+        if ($bulk === null) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required',
+        ]);
+
+        /** @var Model $instance */
+        $instance = $resourceClass::getModel()::query()->newModelInstance();
+        $keyName = $instance->getKeyName();
+
+        $models = $resourceClass::query()->whereIn($keyName, $validated['ids'])->get();
+
+        foreach ($models as $model) {
+            $bulk->authorizeRecord($request, $resourceClass, $model);
+        }
+
+        $bulk->handle($models);
+
+        return redirect()
+            ->to($panel->url($resourceClass::getSlug()))
+            ->with('success', $resourceClass::getPluralLabel().' deleted.');
     }
 
     /**

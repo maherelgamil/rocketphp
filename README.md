@@ -6,8 +6,9 @@ RocketPHP lets you declare admin panels in PHP (panels, resources, tables,
 forms) and renders them as Inertia pages using a self-contained React layer
 built on shadcn/ui + Tailwind.
 
-> **Status:** early preview. Core listing features work; forms, actions,
-> and policies are on the roadmap.
+> **Status:** early preview. **CRUD** (list, create, edit, delete) and form
+> fields (including file upload) are supported. Row/bulk actions, table filters,
+> policies, dashboard, global search, and relation managers are still evolving.
 
 ## Requirements
 
@@ -121,6 +122,13 @@ final class UserResource extends Resource
 ```
 
 Visit `/admin/users` — you'll get a sortable, searchable, paginated table.
+Define `form()` on the resource to enable create/edit and the **New** button.
+
+### Authorization
+
+Register Laravel **policies** for your models. Rocket checks `viewAny`, `create`,
+`update`, and `delete` (and related routes) against the resource model. Users
+who cannot `viewAny` do not see the resource in the sidebar.
 
 ## Configuration
 
@@ -143,12 +151,13 @@ composer install
 
 ## Roadmap
 
-- Forms + Create / Edit pages
-- Row + bulk actions with confirmation dialogs
-- Filters (select, date range, trashed)
-- Policies / authorization
-- Dashboard + widgets
-- Global search, relation managers
+Shipped in package development: forms, create/edit pages, file upload,
+table search/sort/pagination, optional panel **dashboard** with widgets,
+row/bulk delete actions (with confirmations), table **filters** (select,
+ternary, date range, trashed), `copyable` columns, nav icons, per-page size.
+
+Still open / future: **global search** (e.g. Cmd+K), **relation managers**,
+richer notifications/toasts, i18n, multi-tenancy helpers.
 
 ## License
 

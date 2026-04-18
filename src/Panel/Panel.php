@@ -13,6 +13,9 @@ final class Panel
     /** @var array<int, class-string<Resource>> */
     private array $resources = [];
 
+    /** @var array<int, object> */
+    private array $widgets = [];
+
     private string $path = 'admin';
 
     private string $brand;
@@ -148,6 +151,26 @@ final class Panel
     }
 
     /**
+     * Register Inertia dashboard widgets (objects exposing toArray(): array).
+     *
+     * @param  array<int, object>  $widgets
+     */
+    public function widgets(array $widgets): self
+    {
+        $this->widgets = array_values($widgets);
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function getWidgets(): array
+    {
+        return $this->widgets;
+    }
+
+    /**
      * Discover resource classes in a directory using convention-based scanning.
      *
      * Mirrors Filament's `discoverResources(in: ..., for: ...)` API.
@@ -232,9 +255,24 @@ final class Panel
      */
     private function buildNavigation(): array
     {
+        $req = \request();
         $items = [];
 
+        if ($this->widgets !== []) {
+            $items[] = [
+                'label' => 'Dashboard',
+                'icon' => 'layout-dashboard',
+                'group' => null,
+                'slug' => '__dashboard__',
+                'url' => $this->url('dashboard'),
+            ];
+        }
+
         foreach ($this->resources as $resource) {
+            if (! $resource::can($req, 'viewAny')) {
+                continue;
+            }
+
             $items[] = [
                 'label' => $resource::getPluralLabel(),
                 'icon' => $resource::getNavigationIcon(),

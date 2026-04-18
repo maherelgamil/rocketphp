@@ -2,16 +2,22 @@
 
 declare(strict_types=1);
 
+use Illuminate\Auth\GenericUser;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
+use MaherElGamil\Rocket\Tests\Fixtures\OpenWidgetPolicy;
 use MaherElGamil\Rocket\Tests\Fixtures\Widget;
 use MaherElGamil\Rocket\Tests\Fixtures\WidgetResource;
 
 beforeEach(function () {
+    Gate::policy(Widget::class, OpenWidgetPolicy::class);
+    test()->actingAs(new GenericUser(['id' => 1]));
+
     Schema::dropIfExists('widgets');
     Schema::create('widgets', function ($table) {
         $table->id();
@@ -19,6 +25,9 @@ beforeEach(function () {
         $table->text('description')->nullable();
         $table->string('status')->default('active');
         $table->string('avatar')->nullable();
+        $table->boolean('is_featured')->default(false);
+        $table->date('published_at')->nullable();
+        $table->softDeletes();
     });
 
     app(PanelManager::class)->register(
