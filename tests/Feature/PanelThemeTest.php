@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
+use MaherElGamil\Rocket\Support\Color;
+use MaherElGamil\Rocket\Support\Density;
+use MaherElGamil\Rocket\Support\Font;
 use MaherElGamil\Rocket\Tests\Fixtures\OpenWidgetPolicy;
 use MaherElGamil\Rocket\Tests\Fixtures\Widget;
 use MaherElGamil\Rocket\Tests\Fixtures\WidgetResource;
@@ -26,7 +29,7 @@ beforeEach(function () {
     });
 });
 
-function registerThemedPanel(array $theme = []): string
+function registerThemedPanel(callable $configure): string
 {
     $uid = uniqid();
     $path = 'theme-test-'.$uid;
@@ -36,62 +39,100 @@ function registerThemedPanel(array $theme = []): string
         ->authMiddleware([])
         ->resources([WidgetResource::class]);
 
-    if ($theme !== []) {
-        $panel->theme($theme);
-    }
+    $configure($panel);
 
     app(PanelManager::class)->register($panel);
 
     return $path;
 }
 
-it('includes an empty theme in shared props by default', function () {
-    $path = registerThemedPanel();
-
+function panelTheme(string $path): ?array
+{
     $response = test()->withHeaders([
         'X-Inertia' => 'true',
         'X-Inertia-Version' => 'rocket',
     ])->get("/{$path}/widgets");
 
-    $panel = $response->json('props.panel');
-    expect($panel)->toHaveKey('theme');
-    expect($panel['theme'])->toBe([]);
+    return $response->json('props.panel.theme');
+}
+
+it('includes an empty theme by default', function () {
+    $path = registerThemedPanel(fn () => null);
+
+    expect(panelTheme($path))->toBe([]);
 });
 
-it('serializes custom theme tokens into shared props', function () {
-    $path = registerThemedPanel([
-        'primary' => '262 80% 50%',
-        'radius' => '0.75rem',
-        'density' => 'compact',
-        'font' => 'Inter',
-    ]);
+it('setPrimaryColor accepts a raw HSL string', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setPrimaryColor('262 80% 50%'));
 
-    $response = test()->withHeaders([
-        'X-Inertia' => 'true',
-        'X-Inertia-Version' => 'rocket',
-    ])->get("/{$path}/widgets");
-
-    $theme = $response->json('props.panel.theme');
-    expect($theme['primary'])->toBe('262 80% 50%');
-    expect($theme['radius'])->toBe('0.75rem');
-    expect($theme['density'])->toBe('compact');
-    expect($theme['font'])->toBe('Inter');
+    expect(panelTheme($path)['primary'])->toBe('262 80% 50%');
 });
 
-it('allows partial theme tokens', function () {
-    $path = registerThemedPanel(['radius' => '0rem']);
+it('setPrimaryColor accepts a Color enum', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setPrimaryColor(Color::Indigo));
 
-    $response = test()->withHeaders([
-        'X-Inertia' => 'true',
-        'X-Inertia-Version' => 'rocket',
-    ])->get("/{$path}/widgets");
-
-    $theme = $response->json('props.panel.theme');
-    expect($theme)->toBe(['radius' => '0rem']);
-    expect($theme)->not->toHaveKey('primary');
+    expect(panelTheme($path)['primary'])->toBe(Color::Indigo->hsl());
 });
 
-it('returns fluent self from theme() for method chaining', function () {
-    $panel = Panel::make('chain-test');
-    expect($panel->theme(['radius' => '1rem']))->toBeInstanceOf(Panel::class);
+it('setAccentColor accepts a Color enum', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setAccentColor(Color::Teal));
+
+    expect(panelTheme($path)['accent'])->toBe(Color::Teal->hsl());
 });
+
+it('setColor sets an arbitrary named color token', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setColor('primary', Color::Blue));
+
+    expect(panelTheme($path)['primary'])->toBe(Color::Blue->hsl());
+});
+
+it('setFont serializes the font family', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setFont('Inter'));
+
+    expect(panelTheme($path)['font'])->toBe('Inter');
+});
+
+it('setRadius serializes the radius value', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setRadius('0rem'));
+
+    expect(panelTheme($path)['radius'])->toBe('0rem');
+});
+
+it('setDensity accepts a raw string', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setDensity('compact'));
+
+    expect(panelTheme($path)['density'])->toBe('compact');
+});
+
+it('setDensity accepts a Density enum', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setDensity(Density::Comfortable));
+
+    expect(panelTheme($path)['density'])->toBe('comfortable');
+});
+
+it('setFont accepts a Font enum', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p->setFont(Font::Geist));
+
+    expect(panelTheme($path)['font'])->toBe('Geist');
+});
+
+it('all setters are chainable and compose correctly', function () {
+    $path = registerThemedPanel(fn (Panel $p) => $p
+        ->setPrimaryColor(Color::Purple)
+        ->setAccentColor(Color::Pink)
+        ->setFont('Geist')
+        ->setRadius('0.5rem')
+        ->setDensity('comfortable')
+    );
+
+    $theme = panelTheme($path);
+    expect($theme['primary'])->toBe(Color::Purple->hsl());
+    expect($theme['accent'])->toBe(Color::Pink->hsl());
+    expect($theme['font'])->toBe('Geist');
+    expect($theme['radius'])->toBe('0.5rem');
+    expect($theme['density'])->toBe('comfortable');
+});
+
+it('Color enum hsl() returns a non-empty HSL string for every case', function (Color $color) {
+    expect($color->hsl())->toMatch('/^\d{1,3} \d{1,3}% \d{1,3}%$/');
+})->with(Color::cases());

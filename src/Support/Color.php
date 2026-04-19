@@ -44,4 +44,27 @@ enum Color: string
             self::Rose => '#e11d48',
         };
     }
+
+    /** HSL values (no wrapper) suitable for CSS custom properties, e.g. "221 83% 53%". */
+    public function hsl(): string
+    {
+        return match ($this) {
+            self::Slate => '215 16% 47%',
+            self::Gray => '220 9% 46%',
+            self::Red => '0 72% 51%',
+            self::Orange => '25 95% 48%',
+            self::Amber => '38 92% 50%',
+            self::Yellow => '48 96% 47%',
+            self::Green => '142 76% 36%',
+            self::Emerald => '160 84% 39%',
+            self::Teal => '173 80% 40%',
+            self::Cyan => '189 96% 43%',
+            self::Blue => '221 83% 53%',
+            self::Indigo => '239 74% 57%',
+            self::Violet => '262 83% 58%',
+            self::Purple => '272 81% 56%',
+            self::Pink => '330 71% 51%',
+            self::Rose => '347 77% 50%',
+        };
+    }
 }

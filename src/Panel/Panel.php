@@ -6,6 +6,9 @@ namespace MaherElGamil\Rocket\Panel;
 
 use Illuminate\Support\Str;
 use MaherElGamil\Rocket\Resources\Resource;
+use MaherElGamil\Rocket\Support\Color;
+use MaherElGamil\Rocket\Support\Density;
+use MaherElGamil\Rocket\Support\Font;
 use Symfony\Component\Finder\Finder;
 
 final class Panel
@@ -268,12 +271,40 @@ final class Panel
         return $this->globalSearchPlaceholder;
     }
 
-    /**
-     * @param  array<string, string>  $tokens  Supported keys: primary, accent, radius, density, font.
-     */
-    public function theme(array $tokens): self
+    public function setColor(string $name, string|Color $value): self
     {
-        $this->theme = $tokens;
+        $this->theme[$name] = $value instanceof Color ? $value->hsl() : $value;
+
+        return $this;
+    }
+
+    public function setPrimaryColor(string|Color $color): self
+    {
+        return $this->setColor('primary', $color);
+    }
+
+    public function setAccentColor(string|Color $color): self
+    {
+        return $this->setColor('accent', $color);
+    }
+
+    public function setFont(string|Font $family): self
+    {
+        $this->theme['font'] = $family instanceof Font ? $family->value : $family;
+
+        return $this;
+    }
+
+    public function setRadius(string $radius): self
+    {
+        $this->theme['radius'] = $radius;
+
+        return $this;
+    }
+
+    public function setDensity(string|Density $density): self
+    {
+        $this->theme['density'] = $density instanceof Density ? $density->value : $density;
 
         return $this;
     }
