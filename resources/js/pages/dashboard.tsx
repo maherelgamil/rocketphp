@@ -1,4 +1,6 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import ActivityFeedWidget from '../components/activity-feed-widget';
+import ChartWidget from '../components/chart-widget';
 import PanelShell from '../components/panel-shell';
 import { Card } from '../components/ui/card';
 import {
@@ -11,6 +13,7 @@ import {
 } from '../components/ui/table';
 
 type StatWidget = { type: 'stat'; label: string; value: string | number };
+
 type TableWidget = {
     type: 'table';
     title: string;
@@ -18,12 +21,48 @@ type TableWidget = {
     rows: Record<string, unknown>[];
 };
 
-type Widget = StatWidget | TableWidget;
+type ChartWidgetType = {
+    type: 'chart';
+    chart_type: 'line' | 'bar' | 'area';
+    title: string;
+    color: string;
+    data: { label: string; value: number }[];
+};
+
+type RecentRecordsWidget = {
+    type: 'recent_records';
+    title: string;
+    columns: { name: string; label: string }[];
+    rows: Record<string, unknown>[];
+    resource_url: string | null;
+};
+
+type ActivityFeedWidgetType = {
+    type: 'activity_feed';
+    title: string;
+    items: { title: string; time: string | null; icon: string }[];
+};
+
+type Widget = StatWidget | TableWidget | ChartWidgetType | RecentRecordsWidget | ActivityFeedWidgetType;
 
 type Props = {
     panel: Parameters<typeof PanelShell>[0]['panel'];
     widgets: Widget[];
 };
+
+function WidgetCard({ title, span, children, footer }: { title?: string; span?: string; children: React.ReactNode; footer?: React.ReactNode }) {
+    return (
+        <Card className={`p-0 ${span ?? ''}`}>
+            {title && (
+                <div className="border-b px-6 py-4">
+                    <h2 className="text-sm font-medium">{title}</h2>
+                </div>
+            )}
+            <div className="p-6">{children}</div>
+            {footer && <div className="border-t px-6 py-3">{footer}</div>}
+        </Card>
+    );
+}
 
 export default function Dashboard({ panel, widgets }: Props) {
     return (
@@ -43,46 +82,108 @@ export default function Dashboard({ panel, widgets }: Props) {
                             </Card>
                         );
                     }
-                    if (w.type === 'table') {
+
+                    if (w.type === 'chart') {
                         return (
-                            <Card key={i} className="p-0 md:col-span-2 lg:col-span-3">
-                                <div className="border-b px-6 py-4">
-                                    <h2 className="text-lg font-medium">{w.title}</h2>
-                                </div>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            {w.columns.map((c) => (
-                                                <TableHead key={c.name}>{c.label}</TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {w.rows.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell
-                                                    colSpan={w.columns.length}
-                                                    className="text-center text-muted-foreground"
-                                                >
-                                                    No rows
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            w.rows.map((row, ri) => (
-                                                <TableRow key={ri}>
-                                                    {w.columns.map((c) => (
-                                                        <TableCell key={c.name}>
-                                                            {String(row[c.name] ?? '—')}
-                                                        </TableCell>
-                                                    ))}
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </Card>
+                            <WidgetCard key={i} title={w.title} span="md:col-span-2">
+                                <ChartWidget chartType={w.chart_type} data={w.data} color={w.color} />
+                            </WidgetCard>
                         );
                     }
+
+                    if (w.type === 'recent_records') {
+                        return (
+                            <WidgetCard
+                                key={i}
+                                title={w.title}
+                                span="md:col-span-2 lg:col-span-3"
+                                footer={
+                                    w.resource_url ? (
+                                        <Link href={`/${w.resource_url}`} className="text-xs text-muted-foreground hover:text-foreground">
+                                            View all →
+                                        </Link>
+                                    ) : undefined
+                                }
+                            >
+                                <div className="-mx-6 -mt-6">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                {w.columns.map((c) => (
+                                                    <TableHead key={c.name}>{c.label}</TableHead>
+                                                ))}
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {w.rows.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={w.columns.length} className="text-center text-muted-foreground">
+                                                        No records
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                w.rows.map((row, ri) => (
+                                                    <TableRow key={ri}>
+                                                        {w.columns.map((c) => (
+                                                            <TableCell key={c.name}>
+                                                                {String(row[c.name] ?? '—')}
+                                                            </TableCell>
+                                                        ))}
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </WidgetCard>
+                        );
+                    }
+
+                    if (w.type === 'activity_feed') {
+                        return (
+                            <WidgetCard key={i} title={w.title}>
+                                <ActivityFeedWidget items={w.items} />
+                            </WidgetCard>
+                        );
+                    }
+
+                    if (w.type === 'table') {
+                        return (
+                            <WidgetCard key={i} title={w.title} span="md:col-span-2 lg:col-span-3">
+                                <div className="-mx-6 -mt-6">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                {w.columns.map((c) => (
+                                                    <TableHead key={c.name}>{c.label}</TableHead>
+                                                ))}
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {w.rows.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={w.columns.length} className="text-center text-muted-foreground">
+                                                        No rows
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                w.rows.map((row, ri) => (
+                                                    <TableRow key={ri}>
+                                                        {w.columns.map((c) => (
+                                                            <TableCell key={c.name}>
+                                                                {String(row[c.name] ?? '—')}
+                                                            </TableCell>
+                                                        ))}
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </WidgetCard>
+                        );
+                    }
+
                     return null;
                 })}
             </div>
