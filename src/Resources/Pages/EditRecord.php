@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
+use MaherElGamil\Rocket\Resources\RelationManagers\RelationManagerRenderer;
 
 class EditRecord extends Page
 {
@@ -44,6 +45,8 @@ class EditRecord extends Page
                 'url' => $panel->url($resource::getSlug().'/'.$record->getKey()),
             ],
             'index_url' => $panel->url($resource::getSlug()),
+            'relation_managers' => RelationManagerRenderer::render($resource::relationManagers(), $record, $request),
+            'query' => $request->query(),
         ]);
     }
 

@@ -20,7 +20,7 @@ use MaherElGamil\Rocket\Tables\Filters\TernaryFilter;
 use MaherElGamil\Rocket\Tables\Filters\TrashedFilter;
 use MaherElGamil\Rocket\Tables\Table;
 
-final class WidgetResource extends Resource
+class WidgetResource extends Resource
 {
     protected static string $model = Widget::class;
 

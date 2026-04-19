@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import PanelShell from '../components/panel-shell';
 import RecordForm from '../components/record-form';
+import RelationManagers from '../components/relation-managers';
 
 type Props = {
     panel: Parameters<typeof PanelShell>[0]['panel'];
@@ -9,9 +10,20 @@ type Props = {
     state: Record<string, unknown>;
     action: Parameters<typeof RecordForm>[0]['action'];
     index_url: string;
+    relation_managers?: Parameters<typeof RelationManagers>[0]['managers'];
+    query?: Record<string, unknown>;
 };
 
-export default function EditRecord({ panel, resource, form, state, action, index_url }: Props) {
+export default function EditRecord({
+    panel,
+    resource,
+    form,
+    state,
+    action,
+    index_url,
+    relation_managers = {},
+    query = {},
+}: Props) {
     return (
         <PanelShell panel={panel} activeSlug={resource.slug}>
             <Head title={`Edit ${resource.label}`} />
@@ -24,6 +36,11 @@ export default function EditRecord({ panel, resource, form, state, action, index
                 action={action}
                 indexUrl={index_url}
                 submitLabel="Save changes"
+            />
+            <RelationManagers
+                managers={relation_managers}
+                query={query}
+                baseUrl={index_url}
             />
         </PanelShell>
     );

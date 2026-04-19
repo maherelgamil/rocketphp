@@ -106,6 +106,14 @@ abstract class Resource
         return $form;
     }
 
+    /**
+     * @return array<int, class-string<\MaherElGamil\Rocket\Resources\RelationManagers\RelationManager>>
+     */
+    public static function relationManagers(): array
+    {
+        return [];
+    }
+
     public static function hasForm(): bool
     {
         return static::form(Form::make(static::class))->getSchema() !== [];

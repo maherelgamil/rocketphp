@@ -154,6 +154,8 @@ type Props = {
     bulkActions?: RowActionSchema[];
     tableFilters?: TableFilterSchema[];
     perPageOptions?: number[];
+    /** If set, prefixes the 5 core query keys (page, search, sort, direction, per_page) when navigating. */
+    paramPrefix?: string;
 };
 
 function qString(val: unknown): string {
@@ -175,7 +177,10 @@ export default function DataTable({
     bulkActions = [],
     tableFilters = [],
     perPageOptions = [10, 25, 50, 100],
+    paramPrefix = '',
 }: Props) {
+    const prefixKey = (k: string) => (paramPrefix ? paramPrefix + k : k);
+    const coreKeys = new Set(['page', 'search', 'sort', 'direction', 'per_page']);
     const hasBulk = bulkActions.length > 0;
     const [selected, setSelected] = useState<Set<string>>(() => new Set());
     const [search, setSearch] = useState(filters.search);
@@ -186,9 +191,13 @@ export default function DataTable({
     } | null>(null);
 
     const navigate = (patch: Record<string, unknown> & { page?: number }) => {
-        const next: Record<string, unknown> = { ...query, ...patch };
+        const next: Record<string, unknown> = { ...query };
+        for (const [k, v] of Object.entries(patch)) {
+            const key = coreKeys.has(k) ? prefixKey(k) : k;
+            next[key] = v;
+        }
         if (patch.page === undefined) {
-            next.page = 1;
+            next[prefixKey('page')] = 1;
         }
         router.get(baseUrl, next, { preserveState: true, preserveScroll: true, replace: true });
     };

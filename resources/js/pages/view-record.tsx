@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import PanelShell from '../components/panel-shell';
 import type { FieldSchema } from '../components/form-field';
+import RelationManagers from '../components/relation-managers';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -52,6 +53,8 @@ type Props = {
     state: Record<string, unknown>;
     edit_url: string | null;
     index_url: string;
+    relation_managers?: Parameters<typeof RelationManagers>[0]['managers'];
+    query?: Record<string, unknown>;
 };
 
 function isSection(node: Node): node is SectionSchema {
@@ -153,6 +156,8 @@ export default function ViewRecord({
     state,
     edit_url,
     index_url,
+    relation_managers = {},
+    query = {},
 }: Props) {
     const renderField = (field: FieldSchema) => (
         <FieldView key={field.name} field={field} value={state[field.name]} />
@@ -214,6 +219,12 @@ export default function ViewRecord({
                         </dl>
                     </Card>
                 )}
+
+                <RelationManagers
+                    managers={relation_managers}
+                    query={query}
+                    baseUrl={index_url}
+                />
             </div>
         </PanelShell>
     );
