@@ -34,6 +34,9 @@ final class Panel
 
     private string $globalSearchPlaceholder = 'Search...';
 
+    /** @var array<string, string> */
+    private array $theme = [];
+
     public function __construct(private readonly string $id)
     {
         $this->brand = (string) config('rocket.brand.name', 'Rocket');
@@ -266,6 +269,24 @@ final class Panel
     }
 
     /**
+     * @param  array<string, string>  $tokens  Supported keys: primary, accent, radius, density, font.
+     */
+    public function theme(array $tokens): self
+    {
+        $this->theme = $tokens;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getTheme(): array
+    {
+        return $this->theme;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSharedProps(): array
@@ -280,6 +301,7 @@ final class Panel
                 'placeholder' => $this->globalSearchPlaceholder,
                 'url' => $this->url('search'),
             ],
+            'theme' => $this->theme,
         ];
     }
 

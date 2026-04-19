@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import { useFlashToast } from '../hooks/use-flash-toast';
 import { cn } from '../lib/utils';
 import GlobalSearchDialog from './global-search-dialog';
@@ -22,12 +22,21 @@ type GlobalSearch = {
     url: string;
 };
 
+type PanelTheme = {
+    primary?: string;
+    accent?: string;
+    radius?: string;
+    density?: 'compact' | 'default' | 'comfortable';
+    font?: string;
+};
+
 type PanelProps = {
     id: string;
     brand: string;
     path: string;
     navigation: NavItem[];
     global_search: GlobalSearch;
+    theme?: PanelTheme;
 };
 
 type Props = {
@@ -37,6 +46,23 @@ type Props = {
 };
 
 const COLLAPSE_KEY = 'rocket:sidebar-collapsed';
+
+const DENSITY_VARS: Record<string, Record<string, string>> = {
+    compact: { '--rocket-gap': '0.5rem', '--rocket-input-height': '2rem', '--rocket-font-size': '0.8125rem' },
+    default: { '--rocket-gap': '0.75rem', '--rocket-input-height': '2.5rem', '--rocket-font-size': '0.875rem' },
+    comfortable: { '--rocket-gap': '1rem', '--rocket-input-height': '3rem', '--rocket-font-size': '1rem' },
+};
+
+function buildThemeVars(theme: PanelTheme | undefined): React.CSSProperties {
+    if (!theme) return {};
+    const vars: Record<string, string> = {};
+    if (theme.primary) vars['--primary'] = theme.primary;
+    if (theme.accent) vars['--accent'] = theme.accent;
+    if (theme.radius) vars['--radius'] = theme.radius;
+    if (theme.font) vars['--font-sans'] = `"${theme.font}", sans-serif`;
+    Object.assign(vars, DENSITY_VARS[theme.density ?? 'default'] ?? DENSITY_VARS.default);
+    return vars as unknown as React.CSSProperties;
+}
 
 export default function PanelShell({ panel, activeSlug, children }: Props) {
     useFlashToast();
@@ -117,7 +143,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
     );
 
     return (
-        <div className="flex min-h-screen bg-muted/30">
+        <div className="flex min-h-screen bg-muted/30" style={buildThemeVars(panel.theme)}>
             <aside
                 className={cn(
                     'relative hidden shrink-0 flex-col border-r bg-card transition-[width] duration-200 md:flex',
