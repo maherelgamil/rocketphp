@@ -122,9 +122,9 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                                         href={item.url}
                                         title={compact ? item.label : undefined}
                                         className={cn(
-                                            'flex items-center rounded-md text-sm font-medium transition-colors',
+                                            'flex items-center rounded-md font-medium transition-colors text-[var(--rocket-font-size)]',
                                             'hover:bg-accent hover:text-accent-foreground',
-                                            compact ? 'justify-center px-2 py-2' : 'px-3 py-2',
+                                            compact ? 'justify-center px-2 py-2' : 'px-[var(--rocket-gap)] py-[var(--rocket-gap)]',
                                             activeSlug === item.slug
                                                 ? 'bg-accent text-accent-foreground'
                                                 : 'text-muted-foreground',
@@ -205,7 +205,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                                         <Link
                                             href={item.url}
                                             className={cn(
-                                                'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                                                'flex items-center rounded-md px-[var(--rocket-gap)] py-[var(--rocket-gap)] text-[var(--rocket-font-size)] font-medium transition-colors',
                                                 'hover:bg-accent hover:text-accent-foreground',
                                                 activeSlug === item.slug
                                                     ? 'bg-accent text-accent-foreground'
