@@ -152,11 +152,13 @@ $panel
     ->globalSearchEnabled(true)
     ->globalSearchPlaceholder('Search...')
     ->notificationsEnabled(true)
+    ->sidebarCollapsible(false)            // Disable collapse toggle
+    ->sidebarCollapsed(true)                // Start collapsed (needs collapsible)
     ->setPrimaryColor('#3b82f6')
     ->setAccentColor('#8b5cf6')
     ->setFont('Inter')
     ->setRadius('0.5rem')
-    ->setDensity('default');                // default | compact | extra-compact
+    ->setDensity('default');              // default | compact | extra-compact
 ```
 
 ### Resources
@@ -168,6 +170,56 @@ $panel
 - **Custom pages** — Discover custom pages in `app/Rocket/Resources/{Resource}/Pages/`
 - **Relation managers** — Manage related records (HasMany, BelongsToMany, etc.)
 - **Global search** — Search across resources (Cmd+K)
+- **Widgets** — Display dashboard widgets on resource pages
+
+### Widgets
+
+Widgets can be displayed on resource pages (list, create, edit, view) like Filament:
+
+```php
+use MaherElGamil\Rocket\Dashboard\StatWidget;
+use MaherElGamil\Rocket\Dashboard\RecentRecordsWidget;
+use MaherElGamil\Rocket\Resources\Resource;
+use MaherElGamil\Rocket\Tables\Table;
+
+final class UserResource extends Resource
+{
+    protected static string $model = User::class;
+
+    public static function table(Table $table): Table
+    {
+        return $table->columns([...]);
+    }
+
+    public static function widgets(): array
+    {
+        return [
+            StatWidget::make('Total Users', User::query()->count())
+                ->columnSpan(3)
+                ->only(['list']),  // Show only on list page
+
+            RecentRecordsWidget::make('Recent Users')
+                ->columnSpan(3)
+                ->resource(UserResource::class)
+                ->limit(5),
+        ];
+    }
+}
+```
+
+**Available Widgets:**
+
+- `StatWidget::make($label, $value)` — Single value (number, string)
+- `ChartWidget::make($title, $type, $data, $color)` — Line, Bar, Area charts
+- `TableWidget::make($title, $columns, $rows)` — Data table
+- `RecentRecordsWidget::make($title)` — Latest records from a resource
+- `ActivityFeedWidget::make($title, $items)` — Activity timeline
+
+**Widget Options:**
+
+- `->columnSpan(1-6)` — Grid column width
+- `->only(['list', 'create', 'edit', 'view'])` — Show on specific pages
+- (calling nothing renders on all pages)
 
 ### Table
 
