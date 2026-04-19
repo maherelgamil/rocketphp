@@ -172,6 +172,15 @@ it('hides a manager when the related model denies viewAny', function () {
     expect($managers)->toHaveKey('authors');
 });
 
+it('exposes the relation_managers_layout prop with a default of tabs', function () {
+    registerPanel([WidgetWithRelationsResource::class]);
+    $w = Widget::create(['name' => 'w']);
+
+    $payload = relInertiaGet('/test-rm/widgets-with-relations/'.$w->id.'/edit')->json();
+
+    expect($payload['props']['relation_managers_layout'])->toBe('tabs');
+});
+
 it('exposes the full request query on edit and view pages so managers preserve siblings on navigation', function () {
     registerPanel([WidgetWithRelationsResource::class]);
     $w = Widget::create(['name' => 'w']);
@@ -185,6 +194,22 @@ it('exposes the full request query on edit and view pages so managers preserve s
         'rm_comments_search' => 'x',
         'rm_authors_sort' => 'name',
     ]);
+});
+
+it('defaults the manager per_page to the rocket.pagination.relation_manager.per_page config', function () {
+    config()->set('rocket.pagination.relation_manager.per_page', 5);
+    registerPanel([WidgetWithRelationsResource::class]);
+    $w = Widget::create(['name' => 'w']);
+    $rows = [];
+    for ($i = 1; $i <= 12; $i++) {
+        $rows[] = ['widget_id' => $w->id, 'body' => 'c'.$i, 'status' => 'approved'];
+    }
+    Comment::insert($rows);
+
+    $payload = relInertiaGet('/test-rm/widgets-with-relations/'.$w->id.'/edit')->json();
+
+    expect($payload['props']['relation_managers']['comments']['filters']['per_page'])->toBe(5);
+    expect($payload['props']['relation_managers']['comments']['records'])->toHaveCount(5);
 });
 
 it('applies the manager default sort when no sort query is present', function () {

@@ -38,11 +38,15 @@ final class RelationManagerRenderer
             $search = (string) $scopedRequest->query('search', '');
             $sort = (string) $scopedRequest->query('sort', '');
             $direction = $scopedRequest->query('direction') === 'desc' ? 'desc' : 'asc';
+            $defaultPerPage = (int) config(
+                'rocket.pagination.relation_manager.per_page',
+                (int) config('rocket.pagination.per_page', 25),
+            );
             $perPage = max(
                 (int) config('rocket.pagination.min_per_page', 1),
                 min(
                     (int) config('rocket.pagination.max_per_page', 100),
-                    (int) $scopedRequest->query('per_page', (int) config('rocket.pagination.per_page', 25)),
+                    (int) $scopedRequest->query('per_page', $defaultPerPage),
                 ),
             );
 

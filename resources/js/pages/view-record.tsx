@@ -54,6 +54,7 @@ type Props = {
     edit_url: string | null;
     index_url: string;
     relation_managers?: Parameters<typeof RelationManagers>[0]['managers'];
+    relation_managers_layout?: Parameters<typeof RelationManagers>[0]['layout'];
     query?: Record<string, unknown>;
 };
 
@@ -157,6 +158,7 @@ export default function ViewRecord({
     edit_url,
     index_url,
     relation_managers = {},
+    relation_managers_layout = 'tabs',
     query = {},
 }: Props) {
     const renderField = (field: FieldSchema) => (
@@ -223,7 +225,7 @@ export default function ViewRecord({
                 <RelationManagers
                     managers={relation_managers}
                     query={query}
-                    baseUrl={index_url}
+                    layout={relation_managers_layout}
                 />
             </div>
         </PanelShell>

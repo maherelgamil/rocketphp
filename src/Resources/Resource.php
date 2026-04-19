@@ -114,6 +114,16 @@ abstract class Resource
         return [];
     }
 
+    /**
+     * Layout used to render relation managers on edit / view pages.
+     *
+     * Supported: "tabs" (default) and "stacked".
+     */
+    public static function relationManagersLayout(): string
+    {
+        return 'tabs';
+    }
+
     public static function hasForm(): bool
     {
         return static::form(Form::make(static::class))->getSchema() !== [];

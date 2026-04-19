@@ -46,6 +46,7 @@ class EditRecord extends Page
             ],
             'index_url' => $panel->url($resource::getSlug()),
             'relation_managers' => RelationManagerRenderer::render($resource::relationManagers(), $record, $request),
+            'relation_managers_layout' => $resource::relationManagersLayout(),
             'query' => $request->query(),
         ]);
     }
