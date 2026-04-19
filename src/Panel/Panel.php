@@ -39,6 +39,8 @@ final class Panel
 
     private bool $notificationsEnabled = false;
 
+    private int $dashboardColumns = 3;
+
     /** @var array<string, string> */
     private array $theme = [];
 
@@ -285,6 +287,13 @@ final class Panel
         return $this->notificationsEnabled;
     }
 
+    public function dashboardColumns(int $columns): self
+    {
+        $this->dashboardColumns = max(1, $columns);
+
+        return $this;
+    }
+
     public function setColor(string $name, string|Color $value): self
     {
         $this->theme[$name] = $value instanceof Color ? $value->hsl() : $value;
@@ -347,6 +356,7 @@ final class Panel
                 'url' => $this->url('search'),
             ],
             'theme' => $this->theme,
+            'dashboard_columns' => $this->dashboardColumns,
             'notifications' => [
                 'enabled' => $this->notificationsEnabled,
                 'urls' => $this->notificationsEnabled ? [

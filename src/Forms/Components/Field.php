@@ -8,9 +8,12 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
 abstract class Field
 {
+    use HasColumnSpan;
+
     public const SKIP = '__ROCKET_FIELD_SKIP__';
 
     protected ?string $label = null;
@@ -248,6 +251,7 @@ abstract class Field
             'default' => $this->default,
             'disabled' => $this->disabled,
             'required' => $this->isRequired($record),
+            'column_span' => $this->columnSpan,
             'extra' => $this->extraProps(),
         ];
     }

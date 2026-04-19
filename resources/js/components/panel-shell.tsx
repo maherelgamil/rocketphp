@@ -48,6 +48,7 @@ type PanelProps = {
     global_search: GlobalSearch;
     theme?: PanelTheme;
     notifications?: PanelNotifications;
+    dashboard_columns: number;
 };
 
 type Props = {

@@ -20,6 +20,7 @@ export type FieldSchema = {
     default: unknown;
     disabled: boolean;
     required: boolean;
+    column_span: number | string;
     extra: Record<string, unknown>;
 };
 

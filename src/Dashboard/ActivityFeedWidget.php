@@ -6,9 +6,12 @@ namespace MaherElGamil\Rocket\Dashboard;
 
 use Closure;
 use Illuminate\Support\Collection;
+use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
 final class ActivityFeedWidget
 {
+    use HasColumnSpan;
+
     private ?Closure $queryCallback = null;
 
     private string $titleColumn = 'description';
@@ -60,6 +63,7 @@ final class ActivityFeedWidget
         return [
             'type' => 'activity_feed',
             'title' => $this->title,
+            'column_span' => $this->columnSpan,
             'items' => $this->buildItems(),
         ];
     }

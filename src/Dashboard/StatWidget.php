@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Dashboard;
 
+use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
+
 final class StatWidget
 {
+    use HasColumnSpan;
+
     public function __construct(
         private readonly string $label,
         private readonly string|int|float $value,
@@ -20,6 +24,7 @@ final class StatWidget
             'type' => 'stat',
             'label' => $this->label,
             'value' => $this->value,
+            'column_span' => $this->columnSpan,
         ];
     }
 }

@@ -8,9 +8,12 @@ use Carbon\Carbon;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use MaherElGamil\Rocket\Support\Color;
+use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
 final class ChartWidget
 {
+    use HasColumnSpan;
+
     private string $chartType = 'line';
 
     private string $interval = 'day';
@@ -91,6 +94,7 @@ final class ChartWidget
             'chart_type' => $this->chartType,
             'title' => $this->title,
             'color' => $this->color,
+            'column_span' => $this->columnSpan,
             'data' => $this->buildData(),
         ];
     }

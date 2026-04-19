@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react';
 import PanelShell from '../components/panel-shell';
 import type { FieldSchema } from '../components/form-field';
 import RelationManagers from '../components/relation-managers';
+import { colSpanClass, gridClass } from '../lib/grid';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -79,14 +80,7 @@ function flattenNodes(nodes: Node[]): Node[] {
 }
 
 function gridFor(columns: number): string {
-    const n = Math.max(1, Math.min(columns ?? 1, 4));
-    return cn(
-        'grid gap-6',
-        n === 1 && 'grid-cols-1',
-        n === 2 && 'grid-cols-1 md:grid-cols-2',
-        n === 3 && 'grid-cols-1 md:grid-cols-3',
-        n === 4 && 'grid-cols-1 md:grid-cols-4',
-    );
+    return cn('grid gap-6', gridClass(Math.max(1, columns ?? 1)));
 }
 
 function formatValue(field: FieldSchema, value: unknown): React.ReactNode {
@@ -162,7 +156,9 @@ export default function ViewRecord({
     query = {},
 }: Props) {
     const renderField = (field: FieldSchema) => (
-        <FieldView key={field.name} field={field} value={state[field.name]} />
+        <div key={field.name} className={colSpanClass(field.column_span ?? 1)}>
+            <FieldView field={field} value={state[field.name]} />
+        </div>
     );
 
     const nodes = flattenNodes(form.fields);

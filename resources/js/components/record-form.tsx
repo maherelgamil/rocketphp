@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { colSpanClass, gridClass } from '../lib/grid';
 import { cn } from '../lib/utils';
 import FormField, { type FieldSchema } from './form-field';
 import { Button } from './ui/button';
@@ -42,14 +43,7 @@ type Props = {
 };
 
 function gridClassFor(columns: number): string {
-    const n = Math.max(1, Math.min(columns ?? 1, 4));
-    return cn(
-        'grid gap-6',
-        n === 1 && 'grid-cols-1',
-        n === 2 && 'grid-cols-1 md:grid-cols-2',
-        n === 3 && 'grid-cols-1 md:grid-cols-3',
-        n === 4 && 'grid-cols-1 md:grid-cols-4',
-    );
+    return cn('grid gap-6', gridClass(Math.max(1, columns ?? 1)));
 }
 
 function isSection(node: Node): node is SectionSchema {
@@ -74,13 +68,14 @@ export default function RecordForm({ form, state, action, indexUrl, submitLabel 
     };
 
     const renderField = (field: FieldSchema) => (
-        <FormField
-            key={field.name}
-            field={field}
-            value={inertia.data[field.name]}
-            error={inertia.errors[field.name as keyof typeof inertia.errors] as string | undefined}
-            onChange={(v) => inertia.setData(field.name, v)}
-        />
+        <div key={field.name} className={colSpanClass(field.column_span ?? 1)}>
+            <FormField
+                field={field}
+                value={inertia.data[field.name]}
+                error={inertia.errors[field.name as keyof typeof inertia.errors] as string | undefined}
+                onChange={(v) => inertia.setData(field.name, v)}
+            />
+        </div>
     );
 
     const hasLayout = form.fields.some((n) => isSection(n) || isTabs(n));

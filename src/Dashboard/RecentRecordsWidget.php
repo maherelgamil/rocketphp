@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Dashboard;
 
 use MaherElGamil\Rocket\Resources\Resource;
+use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 use MaherElGamil\Rocket\Tables\Table;
 
 final class RecentRecordsWidget
 {
+    use HasColumnSpan;
+
     /** @var class-string<resource>|null */
     private ?string $resource = null;
 
@@ -67,6 +70,7 @@ final class RecentRecordsWidget
         return [
             'type' => 'recent_records',
             'title' => $this->title,
+            'column_span' => $this->columnSpan,
             'columns' => $columns,
             'rows' => $rows,
             'resource_url' => $resource::getSlug(),
