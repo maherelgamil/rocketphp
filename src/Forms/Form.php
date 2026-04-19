@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use MaherElGamil\Rocket\Forms\Components\Field;
 use MaherElGamil\Rocket\Forms\Components\Section;
+use MaherElGamil\Rocket\Forms\Components\Tabs;
 
 final class Form
 {
-    /** @var array<int, Field|Section> */
+    /** @var array<int, Field|Section|Tabs> */
     private array $schema = [];
 
     private int $columns = 1;
@@ -30,7 +31,7 @@ final class Form
     }
 
     /**
-     * @param  array<int, Field|Section>  $schema
+     * @param  array<int, Field|Section|Tabs>  $schema
      */
     public function schema(array $schema): self
     {
@@ -40,7 +41,7 @@ final class Form
     }
 
     /**
-     * @return array<int, Field|Section>
+     * @return array<int, Field|Section|Tabs>
      */
     public function getSchema(): array
     {
@@ -55,7 +56,7 @@ final class Form
         $fields = [];
 
         foreach ($this->schema as $node) {
-            if ($node instanceof Section) {
+            if ($node instanceof Section || $node instanceof Tabs) {
                 foreach ($node->getFields() as $field) {
                     $fields[] = $field;
                 }
@@ -162,8 +163,16 @@ final class Form
         return [
             'columns' => $this->columns,
             'fields' => array_map(
-                function (Field|Section $node) use ($record, $resource) {
+                function (Field|Section|Tabs $node) use ($record, $resource) {
                     if ($node instanceof Section) {
+                        foreach ($node->getFields() as $field) {
+                            $field->setResource($resource);
+                        }
+
+                        return $node->toArray($record);
+                    }
+
+                    if ($node instanceof Tabs) {
                         foreach ($node->getFields() as $field) {
                             $field->setResource($resource);
                         }

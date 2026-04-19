@@ -1,6 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 import FormField, { type FieldSchema } from './form-field';
 import { Button } from './ui/button';
@@ -16,7 +16,12 @@ type SectionSchema = {
     fields: FieldSchema[];
 };
 
-type Node = FieldSchema | SectionSchema;
+type TabsSchema = {
+    type: 'tabs';
+    tabs: SectionSchema[];
+};
+
+type Node = FieldSchema | SectionSchema | TabsSchema;
 
 type Schema = {
     columns: number;
@@ -51,6 +56,14 @@ function isSection(node: Node): node is SectionSchema {
     return (node as SectionSchema).type === 'section';
 }
 
+function isTabs(node: Node): node is TabsSchema {
+    return (node as TabsSchema).type === 'tabs';
+}
+
+function slugify(label: string): string {
+    return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
 export default function RecordForm({ form, state, action, indexUrl, submitLabel }: Props) {
     const inertia = useForm<Record<string, unknown>>(state);
 
@@ -70,24 +83,37 @@ export default function RecordForm({ form, state, action, indexUrl, submitLabel 
         />
     );
 
-    const hasSections = form.fields.some(isSection);
+    const hasLayout = form.fields.some((n) => isSection(n) || isTabs(n));
+
+    const renderSection = (section: SectionSchema, key: string) => (
+        <FormSection key={key} section={section}>
+            <div className={gridClassFor(section.columns)}>{section.fields.map(renderField)}</div>
+        </FormSection>
+    );
 
     return (
         <form onSubmit={submit} className="space-y-6">
-            {hasSections ? (
-                form.fields.map((node, idx) =>
-                    isSection(node) ? (
-                        <FormSection key={`${node.label}-${idx}`} section={node}>
-                            <div className={gridClassFor(node.columns)}>
-                                {node.fields.map(renderField)}
-                            </div>
-                        </FormSection>
-                    ) : (
+            {hasLayout ? (
+                form.fields.map((node, idx) => {
+                    if (isTabs(node)) {
+                        return (
+                            <FormTabs
+                                key={`tabs-${idx}`}
+                                tabs={node.tabs}
+                                errors={inertia.errors as Record<string, string | undefined>}
+                                renderField={renderField}
+                            />
+                        );
+                    }
+                    if (isSection(node)) {
+                        return renderSection(node, `${node.label}-${idx}`);
+                    }
+                    return (
                         <Card key={node.name} className="p-6">
                             <div className={gridClassFor(form.columns)}>{renderField(node)}</div>
                         </Card>
-                    ),
-                )
+                    );
+                })
             ) : (
                 <Card className="p-6">
                     <div className={gridClassFor(form.columns)}>
@@ -105,6 +131,80 @@ export default function RecordForm({ form, state, action, indexUrl, submitLabel 
                 </Button>
             </div>
         </form>
+    );
+}
+
+function FormTabs({
+    tabs,
+    errors,
+    renderField,
+}: {
+    tabs: SectionSchema[];
+    errors: Record<string, string | undefined>;
+    renderField: (field: FieldSchema) => React.ReactNode;
+}) {
+    const slugs = tabs.map((t) => slugify(t.label) || 'tab');
+    const readHash = () => {
+        if (typeof window === 'undefined') return null;
+        const match = window.location.hash.match(/tab=([^&]+)/);
+        return match ? decodeURIComponent(match[1]) : null;
+    };
+    const initial = (() => {
+        const fromHash = readHash();
+        return fromHash && slugs.includes(fromHash) ? fromHash : slugs[0];
+    })();
+    const [active, setActive] = useState(initial);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        url.hash = `tab=${active}`;
+        window.history.replaceState(null, '', url.toString());
+    }, [active]);
+
+    const tabHasErrors = (section: SectionSchema): boolean =>
+        section.fields.some((f) => Boolean(errors[f.name]));
+
+    return (
+        <Card className="overflow-hidden p-0">
+            <div role="tablist" className="flex gap-1 border-b px-4 pt-2">
+                {tabs.map((tab, idx) => {
+                    const slug = slugs[idx];
+                    const isActive = slug === active;
+                    const hasError = tabHasErrors(tab);
+                    return (
+                        <button
+                            key={slug}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            onClick={() => setActive(slug)}
+                            className={cn(
+                                'inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+                                isActive
+                                    ? 'border-primary text-foreground'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                            )}
+                        >
+                            {tab.label}
+                            {hasError && <span className="size-1.5 rounded-full bg-destructive" aria-hidden />}
+                        </button>
+                    );
+                })}
+            </div>
+            {tabs.map((tab, idx) => {
+                const slug = slugs[idx];
+                if (slug !== active) return null;
+                return (
+                    <div key={slug} className="space-y-2 p-6">
+                        {tab.description && (
+                            <p className="text-sm text-muted-foreground">{tab.description}</p>
+                        )}
+                        <div className={gridClassFor(tab.columns)}>{tab.fields.map(renderField)}</div>
+                    </div>
+                );
+            })}
+        </Card>
     );
 }
 

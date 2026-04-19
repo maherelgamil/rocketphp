@@ -16,7 +16,12 @@ type SectionSchema = {
     fields: FieldSchema[];
 };
 
-type Node = FieldSchema | SectionSchema;
+type TabsSchema = {
+    type: 'tabs';
+    tabs: SectionSchema[];
+};
+
+type Node = FieldSchema | SectionSchema | TabsSchema;
 
 type Schema = {
     columns: number;
@@ -51,6 +56,22 @@ type Props = {
 
 function isSection(node: Node): node is SectionSchema {
     return (node as SectionSchema).type === 'section';
+}
+
+function isTabs(node: Node): node is TabsSchema {
+    return (node as TabsSchema).type === 'tabs';
+}
+
+function flattenNodes(nodes: Node[]): Node[] {
+    const out: Node[] = [];
+    for (const node of nodes) {
+        if (isTabs(node)) {
+            out.push(...node.tabs);
+        } else {
+            out.push(node);
+        }
+    }
+    return out;
 }
 
 function gridFor(columns: number): string {
@@ -118,7 +139,8 @@ export default function ViewRecord({
         <FieldView key={field.name} field={field} value={state[field.name]} />
     );
 
-    const hasSections = form.fields.some(isSection);
+    const nodes = flattenNodes(form.fields);
+    const hasSections = nodes.some(isSection);
 
     return (
         <PanelShell panel={panel}>
@@ -143,7 +165,7 @@ export default function ViewRecord({
                 </div>
 
                 {hasSections ? (
-                    form.fields.map((node, idx) =>
+                    nodes.map((node, idx) =>
                         isSection(node) ? (
                             <Card key={`${node.label}-${idx}`} className="overflow-hidden p-0">
                                 <div className="border-b px-6 py-4">
@@ -158,16 +180,18 @@ export default function ViewRecord({
                                     {node.fields.map(renderField)}
                                 </dl>
                             </Card>
-                        ) : (
-                            <Card key={node.name} className="p-6">
-                                <dl className={gridFor(form.columns)}>{renderField(node)}</dl>
+                        ) : isTabs(node) ? null : (
+                            <Card key={(node as FieldSchema).name} className="p-6">
+                                <dl className={gridFor(form.columns)}>
+                                    {renderField(node as FieldSchema)}
+                                </dl>
                             </Card>
                         ),
                     )
                 ) : (
                     <Card className="p-6">
                         <dl className={gridFor(form.columns)}>
-                            {(form.fields as FieldSchema[]).map(renderField)}
+                            {(nodes as FieldSchema[]).map(renderField)}
                         </dl>
                     </Card>
                 )}

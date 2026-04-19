@@ -10,7 +10,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use MaherElGamil\Rocket\Forms\Components\BelongsTo;
-use MaherElGamil\Rocket\Forms\Components\Section;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
@@ -184,15 +183,9 @@ final class ResourceController extends Controller
 
     private function findField(Form $form, string $name): ?\MaherElGamil\Rocket\Forms\Components\Field
     {
-        foreach ($form->getSchema() as $node) {
-            if ($node instanceof Section) {
-                foreach ($node->getFields() as $field) {
-                    if ($field->getName() === $name) {
-                        return $field;
-                    }
-                }
-            } elseif ($node instanceof \MaherElGamil\Rocket\Forms\Components\Field && $node->getName() === $name) {
-                return $node;
+        foreach ($form->getFields() as $field) {
+            if ($field->getName() === $name) {
+                return $field;
             }
         }
 
