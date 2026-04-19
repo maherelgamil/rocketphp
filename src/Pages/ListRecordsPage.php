@@ -24,6 +24,11 @@ class ListRecordsPage extends ResourcePage
 
         $table = $resource::table(Table::make($resource));
 
+        $widgets = array_map(
+            fn ($widget) => $widget->toArray(),
+            $resource::getWidgets('list'),
+        );
+
         $search = (string) $request->query('search', '');
         $sort = (string) $request->query('sort', '');
         $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
@@ -107,6 +112,7 @@ class ListRecordsPage extends ResourcePage
                 'per_page' => $perPage,
             ],
             'query' => $request->query(),
+            'widgets' => $widgets,
         ]);
     }
 

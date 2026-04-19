@@ -30,6 +30,10 @@ class EditRecordPage extends ResourcePage
         $form = $resource::form(Form::make($resource));
         $indexUrl = $panel->url($resource::getSlug());
         $editUrl = $panel->url($resource::getSlug().'/'.$record->getKey());
+        $widgets = array_map(
+            fn ($widget) => $widget->toArray(),
+            $resource::getWidgets('edit'),
+        );
 
         return Inertia::render($this->component(), [
             'panel' => $panel->toSharedProps(),
@@ -58,6 +62,7 @@ class EditRecordPage extends ResourcePage
             'relation_managers' => RelationManagerRenderer::render($resource::relationManagers(), $record, $request),
             'relation_managers_layout' => $resource::relationManagersLayout(),
             'query' => $request->query(),
+            'widgets' => $widgets,
         ]);
     }
 

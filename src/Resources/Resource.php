@@ -211,6 +211,28 @@ abstract class Resource
     }
 
     /**
+     * Define widgets to display on resource pages.
+     *
+     * @return array<int, object>
+     */
+    public static function widgets(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get widgets for a specific page.
+     *
+     * @return array<int, object>
+     */
+    public static function getWidgets(string $page): array
+    {
+        $widgets = static::widgets();
+
+        return array_filter($widgets, fn ($widget) => method_exists($widget, 'shouldRenderOnPage') && $widget->shouldRenderOnPage($page));
+    }
+
+    /**
      * @return array<int, class-string<RelationManager>>
      */
     public static function relationManagers(): array

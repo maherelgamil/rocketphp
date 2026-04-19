@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Dashboard;
 
-use Carbon\Carbon;
-use Closure;
-use Illuminate\Support\Facades\DB;
-use MaherElGamil\Rocket\Support\Color;
+use MaherElGamil\Rocket\Dashboard\Concerns\CanRenderOnPages;
 use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
 final class ChartWidget
 {
     use HasColumnSpan;
+    use CanRenderOnPages;
 
     private string $chartType = 'line';
 

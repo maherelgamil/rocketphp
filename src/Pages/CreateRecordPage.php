@@ -24,6 +24,10 @@ class CreateRecordPage extends ResourcePage
 
         $form = $resource::form(Form::make($resource));
         $indexUrl = $panel->url($resource::getSlug());
+        $widgets = array_map(
+            fn ($widget) => $widget->toArray(),
+            $resource::getWidgets('create'),
+        );
 
         return Inertia::render($this->component(), [
             'panel' => $panel->toSharedProps(),
@@ -48,6 +52,7 @@ class CreateRecordPage extends ResourcePage
                 'url' => $panel->url($resource::getSlug()),
             ],
             'index_url' => $indexUrl,
+            'widgets' => $widgets,
         ]);
     }
 

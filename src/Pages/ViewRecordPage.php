@@ -9,7 +9,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
-use MaherElGamil\Rocket\Resources\RelationManagers\RelationManagerRenderer;
 
 class ViewRecordPage extends ResourcePage
 {
@@ -18,14 +17,16 @@ class ViewRecordPage extends ResourcePage
         return 'view';
     }
 
-    public function handle(Request $request, Panel $panel): Response
+    public function handle(Request $request, Panel $panel, string $record): Response
     {
-        $resource = $this->getResource();
-        $record = $resource::query()->findOrFail($request->route('record'));
-
-        $this->setRecord($record);
-
+        $resource = static::getResource();
+        $record = $resource::query()->findOrFail($record);
         $resource::authorizeForRequest($request, 'view', $record);
+
+        $widgets = array_map(
+            fn ($widget) => $widget->toArray(),
+            $resource::getWidgets('view'),
+        );
 
         $form = $resource::form(Form::make($resource));
         $indexUrl = $panel->url($resource::getSlug());
@@ -57,6 +58,7 @@ class ViewRecordPage extends ResourcePage
             'relation_managers' => RelationManagerRenderer::render($resource::relationManagers(), $record, $request),
             'relation_managers_layout' => $resource::relationManagersLayout(),
             'query' => $request->query(),
+            'widgets' => $widgets,
         ]);
     }
 

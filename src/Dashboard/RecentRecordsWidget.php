@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Dashboard;
 
+use MaherElGamil\Rocket\Dashboard\Concerns\CanRenderOnPages;
 use MaherElGamil\Rocket\Resources\Resource;
 use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 use MaherElGamil\Rocket\Tables\Table;
@@ -11,6 +12,7 @@ use MaherElGamil\Rocket\Tables\Table;
 final class RecentRecordsWidget
 {
     use HasColumnSpan;
+    use CanRenderOnPages;
 
     /** @var class-string<resource>|null */
     private ?string $resource = null;

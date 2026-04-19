@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Dashboard;
 
+use MaherElGamil\Rocket\Dashboard\Concerns\CanRenderOnPages;
 use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
 final class StatWidget
 {
     use HasColumnSpan;
+    use CanRenderOnPages;
 
     public function __construct(
         private readonly string $label,
