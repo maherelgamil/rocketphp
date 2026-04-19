@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Middleware;
 use MaherElGamil\Rocket\Panel\PanelManager;
 
@@ -38,6 +39,30 @@ class HandleRocketRequests extends Middleware
         return config('rocket.inertia.version', 'rocket');
     }
 
+    private function resolveNotificationsSharedProp(Request $request, ?string $panelId): ?array
+    {
+        if (! $panelId || ! $this->panels->has($panelId)) {
+            return null;
+        }
+
+        $panel = $this->panels->get($panelId);
+
+        if (! $panel->isNotificationsEnabled() || ! $request->user()) {
+            return null;
+        }
+
+        try {
+            $count = DatabaseNotification::where('notifiable_type', get_class($request->user()))
+                ->where('notifiable_id', $request->user()->getAuthIdentifier())
+                ->whereNull('read_at')
+                ->count();
+        } catch (\Throwable) {
+            $count = 0;
+        }
+
+        return ['unread_count' => $count];
+    }
+
     /**
      * Data shared with every Rocket Inertia response.
      *
@@ -60,6 +85,7 @@ class HandleRocketRequests extends Middleware
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],
+            'notifications' => fn () => $this->resolveNotificationsSharedProp($request, $panelId),
         ]);
     }
 }

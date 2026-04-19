@@ -5,6 +5,7 @@ import { useFlashToast } from '../hooks/use-flash-toast';
 import { cn } from '../lib/utils';
 import GlobalSearchDialog from './global-search-dialog';
 import NavIcon from './nav-icon';
+import NotificationBell from './notification-bell';
 import { Button } from './ui/button';
 import { Toaster } from './ui/sonner';
 
@@ -30,6 +31,15 @@ type PanelTheme = {
     font?: string;
 };
 
+type PanelNotifications = {
+    enabled: boolean;
+    urls: {
+        index: string;
+        recent: string;
+        mark_all_read: string;
+    };
+};
+
 type PanelProps = {
     id: string;
     brand: string;
@@ -37,6 +47,7 @@ type PanelProps = {
     navigation: NavItem[];
     global_search: GlobalSearch;
     theme?: PanelTheme;
+    notifications?: PanelNotifications;
 };
 
 type Props = {
@@ -241,12 +252,17 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                         </span>
                     </div>
                     <div className="hidden md:block" />
-                    {panel.global_search.enabled && (
-                        <GlobalSearchDialog
-                            url={panel.global_search.url}
-                            placeholder={panel.global_search.placeholder}
-                        />
-                    )}
+                    <div className="flex items-center gap-1">
+                        {panel.global_search.enabled && (
+                            <GlobalSearchDialog
+                                url={panel.global_search.url}
+                                placeholder={panel.global_search.placeholder}
+                            />
+                        )}
+                        {panel.notifications?.enabled && panel.notifications.urls.index && (
+                            <NotificationBell urls={panel.notifications.urls} />
+                        )}
+                    </div>
                 </div>
                 <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
             </main>

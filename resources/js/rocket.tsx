@@ -5,6 +5,7 @@ import Dashboard from './pages/dashboard';
 import EditRecord from './pages/edit-record';
 import ErrorPage from './pages/error';
 import ListRecords from './pages/list-records';
+import Notifications from './pages/notifications';
 import ViewRecord from './pages/view-record';
 
 const pages: Record<string, () => Promise<unknown> | unknown> = {
@@ -13,6 +14,7 @@ const pages: Record<string, () => Promise<unknown> | unknown> = {
     'rocket/EditRecord': () => ({ default: EditRecord }),
     'rocket/ViewRecord': () => ({ default: ViewRecord }),
     'rocket/Dashboard': () => ({ default: Dashboard }),
+    'rocket/Notifications': () => ({ default: Notifications }),
     'rocket/Error': () => ({ default: ErrorPage }),
 };
 

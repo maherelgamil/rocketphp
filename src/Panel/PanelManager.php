@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use MaherElGamil\Rocket\Http\Controllers\DashboardController;
 use MaherElGamil\Rocket\Http\Controllers\GlobalSearchController;
+use MaherElGamil\Rocket\Http\Controllers\NotificationController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
 use MaherElGamil\Rocket\Http\Middleware\HandleRocketRequests;
 use MaherElGamil\Rocket\Http\Middleware\RenderRocketErrorPages;
@@ -97,6 +98,24 @@ final class PanelManager
                 Route::get('search', [GlobalSearchController::class, 'search'])
                     ->defaults('panelId', $panel->id())
                     ->name('search');
+            }
+
+            if ($panel->isNotificationsEnabled()) {
+                Route::get('notifications', [NotificationController::class, 'index'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('notifications.index');
+
+                Route::get('notifications/recent', [NotificationController::class, 'recent'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('notifications.recent');
+
+                Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('notifications.read-all');
+
+                Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('notifications.read');
             }
 
             Route::post('{resource}/bulk-actions/{bulkAction}', [ResourceController::class, 'bulkAction'])

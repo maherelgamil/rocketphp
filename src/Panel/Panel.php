@@ -37,6 +37,8 @@ final class Panel
 
     private string $globalSearchPlaceholder = 'Search...';
 
+    private bool $notificationsEnabled = false;
+
     /** @var array<string, string> */
     private array $theme = [];
 
@@ -271,6 +273,18 @@ final class Panel
         return $this->globalSearchPlaceholder;
     }
 
+    public function notificationsEnabled(bool $enabled = true): self
+    {
+        $this->notificationsEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isNotificationsEnabled(): bool
+    {
+        return $this->notificationsEnabled;
+    }
+
     public function setColor(string $name, string|Color $value): self
     {
         $this->theme[$name] = $value instanceof Color ? $value->hsl() : $value;
@@ -333,6 +347,14 @@ final class Panel
                 'url' => $this->url('search'),
             ],
             'theme' => $this->theme,
+            'notifications' => [
+                'enabled' => $this->notificationsEnabled,
+                'urls' => $this->notificationsEnabled ? [
+                    'index' => $this->url('notifications'),
+                    'recent' => $this->url('notifications/recent'),
+                    'mark_all_read' => $this->url('notifications/read-all'),
+                ] : [],
+            ],
         ];
     }
 
