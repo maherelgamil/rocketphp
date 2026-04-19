@@ -157,12 +157,24 @@ final class Form
      */
     public function toArray(?Model $record = null): array
     {
+        $resource = $this->resource;
+
         return [
             'columns' => $this->columns,
             'fields' => array_map(
-                static fn (Field|Section $node) => $node instanceof Section
-                    ? $node->toArray($record)
-                    : $node->toArray($record),
+                function (Field|Section $node) use ($record, $resource) {
+                    if ($node instanceof Section) {
+                        foreach ($node->getFields() as $field) {
+                            $field->setResource($resource);
+                        }
+
+                        return $node->toArray($record);
+                    }
+
+                    $node->setResource($resource);
+
+                    return $node->toArray($record);
+                },
                 $this->schema,
             ),
         ];

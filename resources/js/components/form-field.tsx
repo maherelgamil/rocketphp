@@ -1,3 +1,4 @@
+import { SearchableSelect } from './searchable-select';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import {
@@ -69,6 +70,20 @@ function renderControl(
         }
 
         case 'select': {
+            const lookupUrl = field.extra.lookup_url as string | null | undefined;
+            if (field.extra.searchable && lookupUrl) {
+                return (
+                    <SearchableSelect
+                        id={field.name}
+                        value={stringValue(value)}
+                        onChange={(v) => onChange(v)}
+                        placeholder={field.placeholder}
+                        disabled={field.disabled}
+                        nullable={!field.required}
+                        lookupUrl={lookupUrl}
+                    />
+                );
+            }
             const options = (field.extra.options ?? {}) as Record<string, string>;
             return (
                 <Select

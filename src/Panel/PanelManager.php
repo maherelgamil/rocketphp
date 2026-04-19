@@ -118,6 +118,11 @@ final class PanelManager
                 ->name('resource.store')
                 ->where('resource', $resourceConstraint);
 
+            Route::get('{resource}/lookup/{field}', [ResourceController::class, 'lookup'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.lookup')
+                ->where(['resource' => $resourceConstraint, 'field' => '[a-zA-Z0-9\._\-]+']);
+
             Route::get('{resource}/{record}/edit', [ResourceController::class, 'edit'])
                 ->defaults('panelId', $panel->id())
                 ->name('resource.edit')

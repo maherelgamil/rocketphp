@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Http\Controllers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use MaherElGamil\Rocket\Forms\Components\BelongsTo;
+use MaherElGamil\Rocket\Forms\Components\Section;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
@@ -44,6 +47,30 @@ final class ResourceController extends Controller
         [$panel, $resourceClass] = $this->resolve($request, $resource);
 
         return $this->dispatchPage($request, $panel, $resourceClass, 'view');
+    }
+
+    public function lookup(Request $request, string $resource, string $field): JsonResponse
+    {
+        [, $resourceClass] = $this->resolve($request, $resource);
+
+        $ability = $request->user() && $request->filled('record') ? 'update' : 'create';
+        $resourceClass::authorizeForRequest($request, $ability);
+
+        $form = $resourceClass::form(Form::make($resourceClass));
+        $target = $this->findField($form, $field);
+
+        if (! $target instanceof BelongsTo || ! $target->isSearchable()) {
+            abort(404);
+        }
+
+        $target->setResource($resourceClass);
+
+        $results = $target->runLookup(
+            $request->string('q')->toString() ?: null,
+            $request->string('id')->toString() ?: null,
+        );
+
+        return response()->json(['results' => $results]);
     }
 
     public function store(Request $request, string $resource): RedirectResponse
@@ -153,6 +180,23 @@ final class ResourceController extends Controller
         return redirect()
             ->to($panel->url($resourceClass::getSlug()))
             ->with('success', $resourceClass::getPluralLabel().' deleted.');
+    }
+
+    private function findField(Form $form, string $name): ?\MaherElGamil\Rocket\Forms\Components\Field
+    {
+        foreach ($form->getSchema() as $node) {
+            if ($node instanceof Section) {
+                foreach ($node->getFields() as $field) {
+                    if ($field->getName() === $name) {
+                        return $field;
+                    }
+                }
+            } elseif ($node instanceof \MaherElGamil\Rocket\Forms\Components\Field && $node->getName() === $name) {
+                return $node;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -39,7 +39,28 @@ abstract class Field
     /** @var array{table: string, column: ?string}|null */
     protected ?array $unique = null;
 
+    /** @var class-string<\MaherElGamil\Rocket\Resources\Resource>|null */
+    protected ?string $resourceClass = null;
+
     final public function __construct(protected readonly string $name) {}
+
+    /**
+     * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resource
+     */
+    public function setResource(string $resource): static
+    {
+        $this->resourceClass = $resource;
+
+        return $this;
+    }
+
+    /**
+     * @return class-string<\MaherElGamil\Rocket\Resources\Resource>|null
+     */
+    public function getResource(): ?string
+    {
+        return $this->resourceClass;
+    }
 
     public static function make(string $name): static
     {
