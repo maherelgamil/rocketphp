@@ -115,6 +115,25 @@ function formatValue(field: FieldSchema, value: unknown): React.ReactNode {
         return <p className="whitespace-pre-wrap">{String(value)}</p>;
     }
 
+    if (field.type === 'key_value') {
+        const pairs = Array.isArray(value)
+            ? (value as { key?: unknown; value?: unknown }[])
+                  .map((r) => ({ key: String(r?.key ?? ''), value: String(r?.value ?? '') }))
+                  .filter((r) => r.key !== '')
+            : [];
+        if (pairs.length === 0) return <span className="text-muted-foreground">—</span>;
+        return (
+            <dl className="space-y-1 text-sm">
+                {pairs.map((p, i) => (
+                    <div key={`${p.key}-${i}`} className="flex gap-2">
+                        <dt className="font-mono text-muted-foreground">{p.key}:</dt>
+                        <dd className="font-mono">{p.value}</dd>
+                    </div>
+                ))}
+            </dl>
+        );
+    }
+
     return <span>{String(value)}</span>;
 }
 

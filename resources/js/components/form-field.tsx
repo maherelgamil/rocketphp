@@ -182,6 +182,77 @@ function renderControl(
             );
         }
 
+        case 'key_value': {
+            type Pair = { key: string; value: string };
+            const pairs: Pair[] = Array.isArray(value)
+                ? (value as unknown[])
+                      .filter((r) => r && typeof r === 'object')
+                      .map((r) => ({
+                          key: String((r as Pair).key ?? ''),
+                          value: String((r as Pair).value ?? ''),
+                      }))
+                : [];
+            const keyLabel = (field.extra.key_label as string | undefined) ?? 'Key';
+            const valueLabel = (field.extra.value_label as string | undefined) ?? 'Value';
+            const addLabel = (field.extra.add_button_label as string | undefined) ?? 'Add row';
+
+            const update = (next: Pair[]) => onChange(next);
+            const updateAt = (idx: number, patch: Partial<Pair>) => {
+                const next = pairs.map((p, i) => (i === idx ? { ...p, ...patch } : p));
+                update(next);
+            };
+            const remove = (idx: number) => update(pairs.filter((_, i) => i !== idx));
+            const add = () => update([...pairs, { key: '', value: '' }]);
+
+            return (
+                <div className="space-y-2 rounded-md border border-input p-3">
+                    {pairs.length === 0 && (
+                        <p className="text-xs text-muted-foreground">No entries.</p>
+                    )}
+                    {pairs.length > 0 && (
+                        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground">
+                            <span>{keyLabel}</span>
+                            <span>{valueLabel}</span>
+                            <span />
+                        </div>
+                    )}
+                    {pairs.map((pair, idx) => (
+                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                            <Input
+                                value={pair.key}
+                                onChange={(e) => updateAt(idx, { key: e.target.value })}
+                                disabled={field.disabled}
+                                placeholder={keyLabel}
+                            />
+                            <Input
+                                value={pair.value}
+                                onChange={(e) => updateAt(idx, { value: e.target.value })}
+                                disabled={field.disabled}
+                                placeholder={valueLabel}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => remove(idx)}
+                                disabled={field.disabled}
+                                className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                aria-label="Remove row"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={add}
+                        disabled={field.disabled}
+                        className="inline-flex items-center rounded-md border border-dashed px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                        + {addLabel}
+                    </button>
+                </div>
+            );
+        }
+
         case 'date': {
             const withTime = Boolean(field.extra.with_time);
             return (
