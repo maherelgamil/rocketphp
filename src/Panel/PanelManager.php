@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use MaherElGamil\Rocket\Http\Controllers\DashboardController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
 use MaherElGamil\Rocket\Http\Middleware\HandleRocketRequests;
+use MaherElGamil\Rocket\Http\Middleware\RenderRocketErrorPages;
 
 final class PanelManager
 {
@@ -69,7 +70,7 @@ final class PanelManager
         $middleware = array_values(array_filter(array_merge(
             $panel->getMiddleware(),
             $panel->getAuthMiddleware(),
-            [HandleRocketRequests::class],
+            [HandleRocketRequests::class, RenderRocketErrorPages::class],
         )));
 
         $attributes = [
