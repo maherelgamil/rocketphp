@@ -26,7 +26,7 @@ class RenderRocketErrorPages
             return $response;
         }
 
-        if (! $request->isMethod('GET')) {
+        if (! $request->isMethod('GET') || $request->expectsJson()) {
             return $response;
         }
 

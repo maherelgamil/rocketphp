@@ -7,6 +7,7 @@ namespace MaherElGamil\Rocket\Panel;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use MaherElGamil\Rocket\Http\Controllers\DashboardController;
+use MaherElGamil\Rocket\Http\Controllers\GlobalSearchController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
 use MaherElGamil\Rocket\Http\Middleware\HandleRocketRequests;
 use MaherElGamil\Rocket\Http\Middleware\RenderRocketErrorPages;
@@ -91,6 +92,10 @@ final class PanelManager
             Route::get('dashboard', [DashboardController::class, 'show'])
                 ->defaults('panelId', $panel->id())
                 ->name('dashboard');
+
+            Route::get('search', [GlobalSearchController::class, 'search'])
+                ->defaults('panelId', $panel->id())
+                ->name('search');
 
             Route::post('{resource}/bulk-actions/{bulkAction}', [ResourceController::class, 'bulkAction'])
                 ->defaults('panelId', $panel->id())

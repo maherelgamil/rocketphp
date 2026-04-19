@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use MaherElGamil\Rocket\Forms\Components\BelongsTo;
+use MaherElGamil\Rocket\Forms\Components\Field;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
@@ -181,7 +182,7 @@ final class ResourceController extends Controller
             ->with('success', $resourceClass::getPluralLabel().' deleted.');
     }
 
-    private function findField(Form $form, string $name): ?\MaherElGamil\Rocket\Forms\Components\Field
+    private function findField(Form $form, string $name): ?Field
     {
         foreach ($form->getFields() as $field) {
             if ($field->getName() === $name) {
@@ -227,6 +228,6 @@ final class ResourceController extends Controller
             throw new NotFoundHttpException("Page [{$pageKey}] not defined for this resource.");
         }
 
-        return (new $pageClass())->handle($request, $panel, $resource);
+        return (new $pageClass)->handle($request, $panel, $resource);
     }
 }

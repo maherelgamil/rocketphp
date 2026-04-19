@@ -45,7 +45,7 @@ abstract class Action
     }
 
     /**
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<resource>  $resourceClass
      */
     abstract public function authorize(Request $request, string $resourceClass, Model $model): void;
 

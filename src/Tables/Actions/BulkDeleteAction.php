@@ -28,7 +28,7 @@ final class BulkDeleteAction extends BulkAction
     }
 
     /**
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<resource>  $resourceClass
      */
     public function authorizeRecord(Request $request, string $resourceClass, Model $model): void
     {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket;
 
-use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
 use MaherElGamil\Rocket\Commands\MakePanelCommand;
 use MaherElGamil\Rocket\Commands\MakeResourceCommand;
@@ -16,7 +15,7 @@ final class RocketServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/rocket.php', 'rocket');
 
-        $this->app->singleton(PanelManager::class, fn () => new PanelManager());
+        $this->app->singleton(PanelManager::class, fn () => new PanelManager);
         $this->app->alias(PanelManager::class, 'rocket');
     }
 

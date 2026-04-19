@@ -40,7 +40,7 @@ abstract class BulkAction
     }
 
     /**
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<resource>  $resourceClass
      */
     abstract public function authorizeRecord(Request $request, string $resourceClass, Model $model): void;
 

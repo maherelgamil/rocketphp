@@ -27,7 +27,7 @@ final class DeleteAction extends Action
     }
 
     /**
-     * @param  class-string<Resource>  $resourceClass
+     * @param  class-string<resource>  $resourceClass
      */
     public function authorize(Request $request, string $resourceClass, Model $model): void
     {

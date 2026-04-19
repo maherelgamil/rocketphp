@@ -10,7 +10,7 @@ use Symfony\Component\Finder\Finder;
 
 final class Panel
 {
-    /** @var array<int, class-string<Resource>> */
+    /** @var array<int, class-string<resource>> */
     private array $resources = [];
 
     /** @var array<int, object> */
@@ -29,6 +29,10 @@ final class Panel
     private array $authMiddleware;
 
     private string $guard = 'web';
+
+    private bool $globalSearchEnabled = true;
+
+    private string $globalSearchPlaceholder = 'Search...';
 
     public function __construct(private readonly string $id)
     {
@@ -133,7 +137,7 @@ final class Panel
     }
 
     /**
-     * @param  array<int, class-string<Resource>>  $resources
+     * @param  array<int, class-string<resource>>  $resources
      */
     public function resources(array $resources): self
     {
@@ -143,7 +147,7 @@ final class Panel
     }
 
     /**
-     * @return array<int, class-string<Resource>>
+     * @return array<int, class-string<resource>>
      */
     public function getResources(): array
     {
@@ -214,7 +218,7 @@ final class Panel
     }
 
     /**
-     * @return class-string<Resource>|null
+     * @return class-string<resource>|null
      */
     public function findResourceBySlug(string $slug): ?string
     {
@@ -237,6 +241,30 @@ final class Panel
         return '/'.trim($this->path.'/'.ltrim($path, '/'), '/');
     }
 
+    public function globalSearchEnabled(bool $enabled = true): self
+    {
+        $this->globalSearchEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isGlobalSearchEnabled(): bool
+    {
+        return $this->globalSearchEnabled;
+    }
+
+    public function globalSearchPlaceholder(string $placeholder): self
+    {
+        $this->globalSearchPlaceholder = $placeholder;
+
+        return $this;
+    }
+
+    public function getGlobalSearchPlaceholder(): string
+    {
+        return $this->globalSearchPlaceholder;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -247,6 +275,11 @@ final class Panel
             'brand' => $this->brand,
             'path' => $this->path,
             'navigation' => $this->buildNavigation(),
+            'global_search' => [
+                'enabled' => $this->globalSearchEnabled,
+                'placeholder' => $this->globalSearchPlaceholder,
+                'url' => $this->url('search'),
+            ],
         ];
     }
 

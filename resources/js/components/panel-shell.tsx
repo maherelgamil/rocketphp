@@ -1,44 +1,12 @@
 import { Link } from '@inertiajs/react';
-import type { LucideIcon } from 'lucide-react';
-import {
-    Box,
-    FileText,
-    FolderTree,
-    LayoutDashboard,
-    ListTodo,
-    Menu,
-    Package,
-    PanelLeftClose,
-    PanelLeftOpen,
-    Settings,
-    Tags,
-    Users,
-    X,
-} from 'lucide-react';
+import { Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useFlashToast } from '../hooks/use-flash-toast';
 import { cn } from '../lib/utils';
+import GlobalSearchDialog from './global-search-dialog';
+import NavIcon from './nav-icon';
 import { Button } from './ui/button';
 import { Toaster } from './ui/sonner';
-
-const NAV_ICONS: Record<string, LucideIcon> = {
-    'layout-dashboard': LayoutDashboard,
-    package: Package,
-    box: Box,
-    users: Users,
-    settings: Settings,
-    'file-text': FileText,
-    'folder-tree': FolderTree,
-    tags: Tags,
-    'list-todo': ListTodo,
-};
-
-function NavIcon({ name, className }: { name: string | null | undefined; className?: string }) {
-    if (!name) return null;
-    const Icon = NAV_ICONS[name];
-    if (!Icon) return null;
-    return <Icon className={cn('size-4 shrink-0 opacity-80', className)} aria-hidden />;
-}
 
 type NavItem = {
     label: string;
@@ -48,11 +16,18 @@ type NavItem = {
     icon?: string | null;
 };
 
+type GlobalSearch = {
+    enabled: boolean;
+    placeholder: string;
+    url: string;
+};
+
 type PanelProps = {
     id: string;
     brand: string;
     path: string;
     navigation: NavItem[];
+    global_search: GlobalSearch;
 };
 
 type Props = {
@@ -223,18 +198,29 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
             </aside>
 
             <main className="flex-1 overflow-x-auto">
-                <div className="flex h-14 items-center border-b bg-card px-4 md:hidden">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="size-9 p-0"
-                        onClick={() => setMobileOpen(true)}
-                        aria-label="Open menu"
-                    >
-                        <Menu className="size-5" />
-                    </Button>
-                    <span className="ml-2 text-base font-semibold tracking-tight">{panel.brand}</span>
+                <div className="flex h-14 items-center justify-between border-b bg-card px-4">
+                    <div className="flex items-center md:hidden">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="size-9 p-0"
+                            onClick={() => setMobileOpen(true)}
+                            aria-label="Open menu"
+                        >
+                            <Menu className="size-5" />
+                        </Button>
+                        <span className="ml-2 text-base font-semibold tracking-tight">
+                            {panel.brand}
+                        </span>
+                    </div>
+                    <div className="hidden md:block" />
+                    {panel.global_search.enabled && (
+                        <GlobalSearchDialog
+                            url={panel.global_search.url}
+                            placeholder={panel.global_search.placeholder}
+                        />
+                    )}
                 </div>
                 <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
             </main>

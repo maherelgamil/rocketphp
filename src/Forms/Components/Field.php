@@ -23,10 +23,8 @@ abstract class Field
 
     protected bool $disabled = false;
 
-    /** @var bool|Closure */
     protected bool|Closure $required = false;
 
-    /** @var bool|Closure */
     protected bool|Closure $nullable = false;
 
     protected ?int $max = null;

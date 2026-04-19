@@ -6,6 +6,7 @@ namespace MaherElGamil\Rocket\Resources\RelationManagers;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 use MaherElGamil\Rocket\Tables\Table;
 
@@ -32,7 +33,7 @@ abstract class RelationManager
 
     public static function query(Model $ownerRecord): Builder
     {
-        /** @var \Illuminate\Database\Eloquent\Relations\Relation $relation */
+        /** @var Relation $relation */
         $relation = $ownerRecord->{static::getRelationship()}();
 
         return $relation->getQuery();

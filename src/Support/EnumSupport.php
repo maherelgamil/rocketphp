@@ -6,7 +6,6 @@ namespace MaherElGamil\Rocket\Support;
 
 use BackedEnum;
 use InvalidArgumentException;
-use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\Contracts\HasColor;
 use MaherElGamil\Rocket\Support\Contracts\HasIcon;
 use MaherElGamil\Rocket\Support\Contracts\HasLabel;

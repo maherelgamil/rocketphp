@@ -13,7 +13,9 @@ use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Resources\Pages\CreateRecord;
 use MaherElGamil\Rocket\Resources\Pages\EditRecord;
 use MaherElGamil\Rocket\Resources\Pages\ListRecords;
+use MaherElGamil\Rocket\Resources\Pages\Page;
 use MaherElGamil\Rocket\Resources\Pages\ViewRecord;
+use MaherElGamil\Rocket\Resources\RelationManagers\RelationManager;
 use MaherElGamil\Rocket\Tables\Table;
 
 abstract class Resource
@@ -87,7 +89,7 @@ abstract class Resource
     }
 
     /**
-     * @return array<string, class-string<\MaherElGamil\Rocket\Resources\Pages\Page>>
+     * @return array<string, class-string<Page>>
      */
     public static function getPages(): array
     {
@@ -107,7 +109,7 @@ abstract class Resource
     }
 
     /**
-     * @return array<int, class-string<\MaherElGamil\Rocket\Resources\RelationManagers\RelationManager>>
+     * @return array<int, class-string<RelationManager>>
      */
     public static function relationManagers(): array
     {
@@ -122,6 +124,33 @@ abstract class Resource
     public static function relationManagersLayout(): string
     {
         return 'tabs';
+    }
+
+    /**
+     * Columns searched during global search. Return [] to opt this resource out.
+     *
+     * @return array<int, string>
+     */
+    public static function globalSearchColumns(): array
+    {
+        return [];
+    }
+
+    /**
+     * Shape: { title, description? }. The controller appends 'url'.
+     *
+     * @return array<string, mixed>
+     */
+    public static function globalSearchResult(Model $record): array
+    {
+        return [
+            'title' => (string) $record->getKey(),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return static::query();
     }
 
     public static function hasForm(): bool
