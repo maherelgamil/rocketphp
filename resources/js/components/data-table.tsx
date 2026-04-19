@@ -16,6 +16,12 @@ import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import { useMemo, useState } from 'react';
 import ConfirmDialog from './confirm-dialog';
 import { DateRangePicker } from './date-range-picker';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -144,6 +150,7 @@ type Props = {
     baseUrl: string;
     editable?: boolean;
     rowActions?: RowActionSchema[];
+    rowActionsOverflowAfter?: number;
     bulkActions?: RowActionSchema[];
     tableFilters?: TableFilterSchema[];
     perPageOptions?: number[];
@@ -164,6 +171,7 @@ export default function DataTable({
     baseUrl,
     editable = false,
     rowActions = [],
+    rowActionsOverflowAfter = 3,
     bulkActions = [],
     tableFilters = [],
     perPageOptions = [10, 25, 50, 100],
@@ -489,57 +497,47 @@ export default function DataTable({
                                                             </Link>
                                                         </Button>
                                                     )}
-                                                {rowActions
-                                                    .filter((a) => a.scope === 'row')
-                                                    .map((action) => {
-                                                        if (action.ability) {
-                                                            const flag = `_can_${action.ability}` as const;
-                                                            if (!row[flag]) return null;
-                                                        } else if (action.name === 'delete' && !row._can_delete) {
-                                                            return null;
-                                                        }
-                                                        const Icon =
-                                                            action.icon === 'pencil'
-                                                                ? Pencil
-                                                                : action.icon === 'eye'
-                                                                  ? Eye
-                                                                  : action.icon === 'trash-2'
-                                                                    ? Trash2
-                                                                    : MoreHorizontal;
-
-                                                        if (action.link && action.route_suffix) {
-                                                            return (
-                                                                <Button
-                                                                    key={action.name}
-                                                                    asChild
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    className="size-8 p-0"
-                                                                >
-                                                                    <Link
-                                                                        href={`${baseUrl}/${String(row._key)}/${action.route_suffix}`}
-                                                                        aria-label={action.label}
-                                                                    >
-                                                                        <Icon className="size-4" />
-                                                                    </Link>
-                                                                </Button>
-                                                            );
-                                                        }
-
-                                                        return (
-                                                            <Button
-                                                                key={action.name}
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="size-8 p-0"
-                                                                aria-label={action.label}
-                                                                onClick={() => runRowAction(action, row)}
-                                                            >
-                                                                <Icon className="size-4" />
-                                                            </Button>
-                                                        );
-                                                    })}
+                                                {(() => {
+                                                    const visible = rowActions
+                                                        .filter((a) => a.scope === 'row')
+                                                        .filter((action) => {
+                                                            if (action.ability) {
+                                                                const flag = `_can_${action.ability}` as const;
+                                                                return Boolean(row[flag]);
+                                                            }
+                                                            if (action.name === 'delete') return Boolean(row._can_delete);
+                                                            return true;
+                                                        });
+                                                    const inline = visible.slice(0, rowActionsOverflowAfter);
+                                                    const overflow = visible.slice(rowActionsOverflowAfter);
+                                                    return (
+                                                        <>
+                                                            {inline.map((action) =>
+                                                                renderRowActionButton(action, row, baseUrl, runRowAction),
+                                                            )}
+                                                            {overflow.length > 0 && (
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            className="size-8 p-0"
+                                                                            aria-label="More actions"
+                                                                        >
+                                                                            <MoreHorizontal className="size-4" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent>
+                                                                        {overflow.map((action) =>
+                                                                            renderRowActionMenuItem(action, row, baseUrl, runRowAction),
+                                                                        )}
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         </TableCell>
                                     )}
@@ -695,4 +693,80 @@ function renderCell(col: Column, value: unknown) {
     }
 
     return <span>{text}</span>;
+}
+
+function iconFor(name: string | null | undefined) {
+    if (name === 'pencil') return Pencil;
+    if (name === 'eye') return Eye;
+    if (name === 'trash-2') return Trash2;
+    return MoreHorizontal;
+}
+
+function renderRowActionButton(
+    action: RowActionSchema,
+    row: Row,
+    baseUrl: string,
+    run: (action: RowActionSchema, row: Row) => void,
+) {
+    const Icon = iconFor(action.icon);
+    if (action.link && action.route_suffix) {
+        return (
+            <Button
+                key={action.name}
+                asChild
+                size="sm"
+                variant="ghost"
+                className="size-8 p-0"
+            >
+                <Link
+                    href={`${baseUrl}/${String(row._key)}/${action.route_suffix}`}
+                    aria-label={action.label}
+                >
+                    <Icon className="size-4" />
+                </Link>
+            </Button>
+        );
+    }
+    return (
+        <Button
+            key={action.name}
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="size-8 p-0"
+            aria-label={action.label}
+            onClick={() => run(action, row)}
+        >
+            <Icon className="size-4" />
+        </Button>
+    );
+}
+
+function renderRowActionMenuItem(
+    action: RowActionSchema,
+    row: Row,
+    baseUrl: string,
+    run: (action: RowActionSchema, row: Row) => void,
+) {
+    const Icon = iconFor(action.icon);
+    if (action.link && action.route_suffix) {
+        return (
+            <DropdownMenuItem key={action.name} asChild destructive={action.destructive}>
+                <Link href={`${baseUrl}/${String(row._key)}/${action.route_suffix}`}>
+                    <Icon className="size-4" />
+                    <span>{action.label}</span>
+                </Link>
+            </DropdownMenuItem>
+        );
+    }
+    return (
+        <DropdownMenuItem
+            key={action.name}
+            destructive={action.destructive}
+            onSelect={() => run(action, row)}
+        >
+            <Icon className="size-4" />
+            <span>{action.label}</span>
+        </DropdownMenuItem>
+    );
 }

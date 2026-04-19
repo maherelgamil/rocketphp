@@ -30,6 +30,7 @@ type Props = {
     filters: Parameters<typeof DataTable>[0]['filters'];
     query: Record<string, unknown>;
     row_actions?: RowActionSchema[];
+    row_actions_overflow_after?: number;
     bulk_actions?: RowActionSchema[];
     table_filters?: TableFilterSchema[];
     per_page_options?: number[];
@@ -44,6 +45,7 @@ export default function ListRecords({
     filters,
     query,
     row_actions = [],
+    row_actions_overflow_after = 3,
     bulk_actions = [],
     table_filters = [],
     per_page_options = [10, 25, 50, 100],
@@ -79,6 +81,7 @@ export default function ListRecords({
                 baseUrl={baseUrl}
                 editable={resource.hasForm}
                 rowActions={row_actions}
+                rowActionsOverflowAfter={row_actions_overflow_after}
                 bulkActions={bulk_actions}
                 tableFilters={table_filters as Parameters<typeof DataTable>[0]['tableFilters']}
                 perPageOptions={per_page_options}

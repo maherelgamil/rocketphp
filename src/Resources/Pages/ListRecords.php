@@ -82,6 +82,7 @@ class ListRecords extends Page
             ],
             'table' => $table->toArray(),
             'row_actions' => $table->rowActionsToArray(),
+            'row_actions_overflow_after' => $table->getActionsOverflowAfter(),
             'bulk_actions' => $table->bulkActionsToArray(),
             'table_filters' => $tableFilters,
             'records' => $records,

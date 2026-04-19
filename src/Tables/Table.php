@@ -33,6 +33,8 @@ final class Table
 
     private string $defaultSortDirection = 'asc';
 
+    private int $actionsOverflowAfter = 3;
+
     /**
      * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resource
      */
@@ -122,6 +124,18 @@ final class Table
         }
 
         return $this;
+    }
+
+    public function actionsOverflowAfter(int $after): self
+    {
+        $this->actionsOverflowAfter = max(0, $after);
+
+        return $this;
+    }
+
+    public function getActionsOverflowAfter(): int
+    {
+        return $this->actionsOverflowAfter;
     }
 
     public function getRowAction(string $name): ?Action
