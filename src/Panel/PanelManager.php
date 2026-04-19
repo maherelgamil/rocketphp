@@ -93,9 +93,11 @@ final class PanelManager
                 ->defaults('panelId', $panel->id())
                 ->name('dashboard');
 
-            Route::get('search', [GlobalSearchController::class, 'search'])
-                ->defaults('panelId', $panel->id())
-                ->name('search');
+            if ($panel->isGlobalSearchEnabled()) {
+                Route::get('search', [GlobalSearchController::class, 'search'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('search');
+            }
 
             Route::post('{resource}/bulk-actions/{bulkAction}', [ResourceController::class, 'bulkAction'])
                 ->defaults('panelId', $panel->id())
