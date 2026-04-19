@@ -31,7 +31,7 @@ beforeEach(function () {
             ->path('test-admin')
             ->authMiddleware([])
             ->widgets([
-                new StatWidget('Total widgets',0),
+                new StatWidget('Total widgets', 0),
             ])
             ->resources([WidgetResource::class])
     );
@@ -47,7 +47,8 @@ it('renders the dashboard page with widgets', function () {
     $payload = $response->json();
 
     expect($payload['component'])->toBe('rocket/Dashboard')
-        ->and($payload['props']['widgets'])->toHaveCount(1)
-        ->and($payload['props']['widgets'][0]['type'])->toBe('stat')
-        ->and($payload['props']['widgets'][0]['label'])->toBe('Total widgets');
+        ->and($payload['props']['content'])->toHaveCount(1)
+        ->and($payload['props']['content'][0]['type'])->toBe('widget')
+        ->and($payload['props']['content'][0]['widget']['type'])->toBe('stat')
+        ->and($payload['props']['content'][0]['widget']['label'])->toBe('Total widgets');
 });

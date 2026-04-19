@@ -49,6 +49,8 @@ type PanelProps = {
     theme?: PanelTheme;
     notifications?: PanelNotifications;
     dashboard_columns: number;
+    sidebar_collapsed?: boolean;
+    sidebar_collapsible?: boolean;
 };
 
 type Props = {
@@ -79,12 +81,13 @@ function buildThemeVars(theme: PanelTheme | undefined): React.CSSProperties {
 export default function PanelShell({ panel, activeSlug, children }: Props) {
     useFlashToast();
 
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(panel.sidebar_collapsed ?? false);
     const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === '1');
+        const stored = window.localStorage.getItem(COLLAPSE_KEY);
+        setCollapsed(stored ? stored === '1' : (panel.sidebar_collapsed ?? false));
     }, []);
 
     useEffect(() => {
@@ -163,18 +166,20 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                 )}
             >
                 {renderNav(collapsed)}
-                <button
-                    type="button"
-                    onClick={() => setCollapsed((v) => !v)}
-                    className="absolute -right-3 top-20 hidden size-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:text-foreground md:flex"
-                    aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                >
-                    {collapsed ? (
-                        <PanelLeftOpen className="size-3.5" />
-                    ) : (
-                        <PanelLeftClose className="size-3.5" />
-                    )}
-                </button>
+                {panel.sidebar_collapsible !== false && (
+                    <button
+                        type="button"
+                        onClick={() => setCollapsed((v) => !v)}
+                        className="absolute -right-3 top-20 hidden size-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:text-foreground md:flex"
+                        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        {collapsed ? (
+                            <PanelLeftOpen className="size-3.5" />
+                        ) : (
+                            <PanelLeftClose className="size-3.5" />
+                        )}
+                    </button>
+                )}
             </aside>
 
             {mobileOpen && (

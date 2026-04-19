@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Panel;
 
 use Illuminate\Support\Str;
+use MaherElGamil\Rocket\Pages\DashboardPage;
+use MaherElGamil\Rocket\Pages\Page;
 use MaherElGamil\Rocket\Resources\Resource;
 use MaherElGamil\Rocket\Support\Color;
 use MaherElGamil\Rocket\Support\Density;
@@ -18,6 +20,9 @@ final class Panel
 
     /** @var array<int, object> */
     private array $widgets = [];
+
+    /** @var array<int, class-string<Page>> */
+    private array $pages = [];
 
     private string $path = 'admin';
 
@@ -40,6 +45,10 @@ final class Panel
     private bool $notificationsEnabled = false;
 
     private int $dashboardColumns = 3;
+
+    private ?bool $sidebarCollapsed = null;
+
+    private bool $sidebarCollapsible = true;
 
     /** @var array<string, string> */
     private array $theme = [];
@@ -162,6 +171,62 @@ final class Panel
     public function getResources(): array
     {
         return $this->resources;
+    }
+
+    /**
+     * @param  array<int, class-string<Page>>  $pageClasses
+     */
+    public function pages(array $pageClasses): static
+    {
+        $this->pages = $pageClasses;
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, class-string<Page>>
+     */
+    public function getPages(): array
+    {
+        return $this->pages;
+    }
+
+    /**
+     * Auto-discover Page classes in a directory.
+     */
+    public function discoverPages(string $directory, string $namespace): static
+    {
+        if (! is_dir($directory)) {
+            return $this;
+        }
+
+        $realDirectory = realpath($directory) ?: $directory;
+        $files = Finder::create()->in($directory)->files()->name('*.php');
+
+        foreach ($files as $file) {
+            $relativePath = str_replace($realDirectory.DIRECTORY_SEPARATOR, '', $file->getRealPath());
+            $class = $namespace.'\\'.str_replace(
+                [DIRECTORY_SEPARATOR, '.php'],
+                ['\\', ''],
+                $relativePath
+            );
+
+            if (! class_exists($class)) {
+                continue;
+            }
+
+            $reflection = new \ReflectionClass($class);
+
+            if ($reflection->isAbstract() || ! $reflection->isSubclassOf(Page::class)) {
+                continue;
+            }
+
+            if (! in_array($class, $this->pages, true)) {
+                $this->pages[] = $class;
+            }
+        }
+
+        return $this;
     }
 
     /**
@@ -332,6 +397,30 @@ final class Panel
         return $this;
     }
 
+    public function sidebarCollapsed(bool $collapsed = true): self
+    {
+        $this->sidebarCollapsed = $collapsed;
+
+        return $this;
+    }
+
+    public function isSidebarCollapsed(): ?bool
+    {
+        return $this->sidebarCollapsed;
+    }
+
+    public function sidebarCollapsible(bool $collapsible = true): self
+    {
+        $this->sidebarCollapsible = $collapsible;
+
+        return $this;
+    }
+
+    public function isSidebarCollapsible(): bool
+    {
+        return $this->sidebarCollapsible;
+    }
+
     /**
      * @return array<string, string>
      */
@@ -357,6 +446,8 @@ final class Panel
             ],
             'theme' => $this->theme,
             'dashboard_columns' => $this->dashboardColumns,
+            'sidebar_collapsed' => $this->sidebarCollapsed,
+            'sidebar_collapsible' => $this->sidebarCollapsible,
             'notifications' => [
                 'enabled' => $this->notificationsEnabled,
                 'urls' => $this->notificationsEnabled ? [
@@ -377,12 +468,13 @@ final class Panel
         $items = [];
 
         if ($this->widgets !== []) {
+            $dashboard = new DashboardPage;
             $items[] = [
-                'label' => 'Dashboard',
-                'icon' => 'layout-dashboard',
-                'group' => null,
+                'label' => $dashboard->getNavigationLabel(),
+                'icon' => $dashboard->getNavigationIcon(),
+                'group' => $dashboard->getNavigationGroup(),
                 'slug' => '__dashboard__',
-                'url' => $this->url('dashboard'),
+                'url' => url($this->getPath().'/dashboard'),
             ];
         }
 
@@ -397,6 +489,26 @@ final class Panel
                 'group' => $resource::getNavigationGroup(),
                 'slug' => $resource::getSlug(),
                 'url' => $this->url($resource::getSlug()),
+            ];
+        }
+
+        foreach ($this->pages as $pageClass) {
+            $page = new $pageClass;
+
+            if (! $page->shouldRegisterNavigation()) {
+                continue;
+            }
+
+            if (! $page->can($req)) {
+                continue;
+            }
+
+            $items[] = [
+                'label' => $page->getNavigationLabel(),
+                'icon' => $page->getNavigationIcon(),
+                'group' => $page->getNavigationGroup(),
+                'sort' => $page->getNavigationSort(),
+                'url' => url($this->getPath().'/pages/'.$page->getSlug()),
             ];
         }
 

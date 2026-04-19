@@ -10,13 +10,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use MaherElGamil\Rocket\Forms\Form;
-use MaherElGamil\Rocket\Resources\Pages\CreateRecord;
-use MaherElGamil\Rocket\Resources\Pages\EditRecord;
-use MaherElGamil\Rocket\Resources\Pages\ListRecords;
-use MaherElGamil\Rocket\Resources\Pages\Page;
-use MaherElGamil\Rocket\Resources\Pages\ViewRecord;
+use MaherElGamil\Rocket\Pages\CreateRecordPage;
+use MaherElGamil\Rocket\Pages\EditRecordPage;
+use MaherElGamil\Rocket\Pages\ListRecordsPage;
+use MaherElGamil\Rocket\Pages\ResourcePage;
+use MaherElGamil\Rocket\Pages\ViewRecordPage;
 use MaherElGamil\Rocket\Resources\RelationManagers\RelationManager;
 use MaherElGamil\Rocket\Tables\Table;
+use Symfony\Component\Finder\Finder;
 
 abstract class Resource
 {
@@ -89,16 +90,117 @@ abstract class Resource
     }
 
     /**
-     * @return array<string, class-string<Page>>
+     * Discover custom page classes in a directory.
+     *
+     * Scans for PHP classes extending ResourcePage for this resource.
+     * Pages can override standard CRUD pages (index, create, edit, view).
+     *
+     * @return array<string, class-string<ResourcePage>>
+     */
+    public static function discoverPages(string $directory): array
+    {
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        $pages = [];
+        $realDirectory = realpath($directory) ?: $directory;
+        $files = Finder::create()->in($directory)->files()->name('*.php');
+
+        foreach ($files as $file) {
+            $relativePath = str_replace($realDirectory.DIRECTORY_SEPARATOR, '', $file->getRealPath());
+            $class = str_replace(
+                [DIRECTORY_SEPARATOR, '.php'],
+                ['\\', ''],
+                $relativePath
+            );
+
+            if (! class_exists($class)) {
+                continue;
+            }
+
+            $reflection = new \ReflectionClass($class);
+
+            if ($reflection->isAbstract() || ! $reflection->isSubclassOf(ResourcePage::class)) {
+                continue;
+            }
+
+            $slug = (new $class)->getSlug();
+            $pages[$slug] = $class;
+        }
+
+        return $pages;
+    }
+
+    /**
+     * @return array<string, class-string<ResourcePage>>
      */
     public static function getPages(): array
     {
-        return [
-            'index' => ListRecords::class,
-            'create' => CreateRecord::class,
-            'edit' => EditRecord::class,
-            'view' => ViewRecord::class,
+        $pages = [
+            'index' => ListRecordsPage::class,
+            'create' => CreateRecordPage::class,
+            'edit' => EditRecordPage::class,
+            'view' => ViewRecordPage::class,
         ];
+
+        return array_merge($pages, static::discoverPagesInApp());
+    }
+
+    /**
+     * Discover custom pages in the app's Resource/Pages directory.
+     *
+     * Convention: `app/Rocket/Resources/{ResourceBasename}/Pages/`
+     * with namespace `App\Rocket\Resources\{ResourceBasename}\Pages\`.
+     *
+     * Override this method to provide custom discovery location.
+     *
+     * @return array<string, class-string<ResourcePage>>
+     */
+    protected static function discoverPagesInApp(): array
+    {
+        $basename = class_basename(static::class);
+        $directory = app_path('Rocket'.DIRECTORY_SEPARATOR.'Resources'.DIRECTORY_SEPARATOR.$basename.DIRECTORY_SEPARATOR.'Pages');
+        $namespace = 'App\\Rocket\\Resources\\'.$basename.'\\Pages';
+
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        $reserved = ['index', 'create', 'edit', 'view'];
+        $pages = [];
+        $realDirectory = realpath($directory) ?: $directory;
+
+        $files = Finder::create()->in($directory)->files()->name('*.php');
+
+        foreach ($files as $file) {
+            $relativePath = str_replace($realDirectory.DIRECTORY_SEPARATOR, '', $file->getRealPath());
+            $class = $namespace.'\\'.str_replace(
+                [DIRECTORY_SEPARATOR, '.php'],
+                ['\\', ''],
+                $relativePath
+            );
+
+            if (! class_exists($class)) {
+                continue;
+            }
+
+            $reflection = new \ReflectionClass($class);
+
+            if ($reflection->isAbstract() || ! $reflection->isSubclassOf(ResourcePage::class)) {
+                continue;
+            }
+
+            $slug = (new $class)->getCustomPageSlug();
+
+            if (in_array($slug, $reserved, true)) {
+                continue;
+            }
+
+            $pages[$slug] = $class;
+        }
+
+        return $pages;
     }
 
     abstract public static function table(Table $table): Table;

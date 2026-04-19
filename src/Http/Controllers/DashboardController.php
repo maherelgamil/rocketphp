@@ -6,8 +6,8 @@ namespace MaherElGamil\Rocket\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Inertia\Inertia;
 use Inertia\Response;
+use MaherElGamil\Rocket\Pages\DashboardPage;
 use MaherElGamil\Rocket\Panel\PanelManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -26,16 +26,8 @@ final class DashboardController extends Controller
         $panel = $this->panels->get($panelId);
         $this->panels->setCurrent($panelId);
 
-        $widgets = [];
-        foreach ($panel->getWidgets() as $widget) {
-            if (is_object($widget) && method_exists($widget, 'toArray')) {
-                $widgets[] = $widget->toArray();
-            }
-        }
+        $page = new DashboardPage;
 
-        return Inertia::render('rocket/Dashboard', [
-            'panel' => $panel->toSharedProps(),
-            'widgets' => $widgets,
-        ]);
+        return $page->handle($request, $panel);
     }
 }

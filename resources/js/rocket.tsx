@@ -7,6 +7,7 @@ import ErrorPage from './pages/error';
 import ListRecords from './pages/list-records';
 import Notifications from './pages/notifications';
 import ViewRecord from './pages/view-record';
+import RocketPage from './pages/page';
 
 const pages: Record<string, () => Promise<unknown> | unknown> = {
     'rocket/ListRecords': () => ({ default: ListRecords }),
@@ -16,6 +17,7 @@ const pages: Record<string, () => Promise<unknown> | unknown> = {
     'rocket/Dashboard': () => ({ default: Dashboard }),
     'rocket/Notifications': () => ({ default: Notifications }),
     'rocket/Error': () => ({ default: ErrorPage }),
+    'rocket/Page': () => ({ default: RocketPage }),
 };
 
 createInertiaApp({

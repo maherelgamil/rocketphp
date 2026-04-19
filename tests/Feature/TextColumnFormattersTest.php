@@ -50,7 +50,7 @@ it('applies prefix, suffix, and limit in a predictable order', function () {
 
 it('renders markdown input to sanitized HTML when ->markdown() is set', function () {
     $column = TextColumn::make('body')->markdown();
-    $record = new Widget(['body' => "**hi** <script>alert(1)</script>"]);
+    $record = new Widget(['body' => '**hi** <script>alert(1)</script>']);
 
     $html = $column->render($record);
 

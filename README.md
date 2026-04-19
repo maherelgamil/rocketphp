@@ -1,14 +1,26 @@
 # RocketPHP
 
-A declarative admin panel framework for Inertia.js + React.
+A **Server-Driven UI (SDUI)** framework for Laravel + Inertia.js + React + shadcn/ui.
 
-RocketPHP lets you declare admin panels in PHP (panels, resources, tables,
-forms) and renders them as Inertia pages using a self-contained React layer
-built on shadcn/ui + Tailwind.
+## What is SDUI?
 
-> **Status:** early preview. **CRUD** (list, create, edit, delete) and form
-> fields (including file upload) are supported. Row/bulk actions, table filters,
-> policies, dashboard, global search, and relation managers are still evolving.
+**Server-Driven UI** is an architectural pattern where the server controls the UI structure — not just data, but *what components to render, their layout, and behavior*. Instead of the client querying APIs and building UI, the server sends a complete UI schema (JSON) that the client renders deterministically.
+
+```
+┌─────────────┐    UI Schema (JSON)    ┌─────────────┐
+│   Laravel  │ ─────────────────────► │    React   │
+│   (PHP)   │   "render this"       │  (client)  │
+└─────────────┘                     └─────────────┘
+```
+
+RocketPHP sends widget definitions, table schemas, form configurations, and page blocks from PHP. The React layer is *stateless* — it simply renders what it receives.
+
+### Why SDUI?
+
+- **Single source of truth** — UI logic lives in PHP, not duplicated across frontend
+- **Rapid iteration** — change a definition, instantly reflected everywhere
+- **No client-side API bloat** — no fetching, no state management, no custom UI code
+- **Consistency** — every rendered table/form follows the exact same patterns
 
 ## Requirements
 
@@ -17,6 +29,7 @@ built on shadcn/ui + Tailwind.
 - Inertia.js v3 (`inertiajs/inertia-laravel`)
 - Tailwind CSS v4 in the host app
 - React 19 + `@inertiajs/react`
+- shadcn/ui v1
 
 ## Installation
 
@@ -24,8 +37,7 @@ built on shadcn/ui + Tailwind.
 composer require maherelgamil/rocketphp
 ```
 
-Register the service provider (auto-discovered) and add Rocket's source to
-your Tailwind `app.css`:
+Register the service provider (auto-discovered) and add Rocket's source to your Tailwind `app.css`:
 
 ```css
 @import 'tailwindcss';
@@ -124,11 +136,86 @@ final class UserResource extends Resource
 Visit `/admin/users` — you'll get a sortable, searchable, paginated table.
 Define `form()` on the resource to enable create/edit and the **New** button.
 
+## Features
+
+### Panel Configuration
+
+```php
+$panel
+    ->path('admin')
+    ->brand('My App')
+    ->domain('admin.example.com')           // Optional domain
+    ->middleware(['web', 'auth'])           // Route middleware
+    ->authMiddleware(['auth', 'verified'])  // Authenticated middleware
+    ->guard('web')                          // Auth guard
+    ->dashboardColumns(4)                  // Grid columns (1-6)
+    ->globalSearchEnabled(true)
+    ->globalSearchPlaceholder('Search...')
+    ->notificationsEnabled(true)
+    ->setPrimaryColor('#3b82f6')
+    ->setAccentColor('#8b5cf6')
+    ->setFont('Inter')
+    ->setRadius('0.5rem')
+    ->setDensity('default');                // default | compact | extra-compact
+```
+
+### Resources
+
+- **Model binding** — Automatic Eloquent model binding
+- **Slug customization** — Custom URL slugs
+- **Navigation** — Icon, group, and sort order
+- **CRUD pages** — List, Create, Edit, View pages auto-generated
+- **Custom pages** — Discover custom pages in `app/Rocket/Resources/{Resource}/Pages/`
+- **Relation managers** — Manage related records (HasMany, BelongsToMany, etc.)
+- **Global search** — Search across resources (Cmd+K)
+
+### Table
+
+- **Columns**: Text, Boolean, Icon, Image, Badge
+- **Sorting** — Column sorting
+- **Search** — Global search across defined columns
+- **Pagination** — Configurable per-page (10, 25, 50, 100)
+- **Filters**: Select, Ternary, Date Range, Trashed
+- **Row actions**: Edit, View, Delete (with confirmation)
+- **Bulk actions**: Bulk delete (with confirmation)
+
+### Form Fields
+
+- TextInput, Textarea
+- Select, MultiSelect
+- Checkbox, Radio, Toggle
+- DatePicker
+- BelongsTo (dropdown)
+- BelongsToMany (multi-select)
+- FileUpload (with preview)
+- KeyValue (dynamic key-value pairs)
+- Section (field grouping)
+- Tabs (tabbed forms)
+
+### Dashboard Widgets
+
+- **Stat** — Single value with label
+- **Chart** — Line, Bar, Area charts
+- **Table** — Data table widget
+- **Recent Records** — Latest records from a resource
+- **Activity Feed** — Activity timeline
+
+### Page Blocks (Custom Pages)
+
+- **Widget** — Embed dashboard widgets
+- **Grid** — Multi-column layouts
+- **HTML** — Raw HTML content
+
 ### Authorization
 
-Register Laravel **policies** for your models. Rocket checks `viewAny`, `create`,
-`update`, and `delete` (and related routes) against the resource model. Users
-who cannot `viewAny` do not see the resource in the sidebar.
+Register Laravel **policies** for your models. Rocket checks:
+- `viewAny` — Show in navigation
+- `view` — View record page
+- `create` — Create new record
+- `update` — Edit record
+- `delete` — Delete record
+
+Users who cannot `viewAny` don't see the resource in the sidebar.
 
 ## Configuration
 
@@ -138,8 +225,41 @@ Publish the config file:
 php artisan vendor:publish --tag=rocket-config
 ```
 
-See `config/rocket.php` for available options: default panel, root view,
-pagination bounds, default route middleware, brand.
+See `config/rocket.php` for available options.
+
+## Architecture
+
+```
+src/
+├── Commands/              # Artisan commands (rocket:make-*)
+├── Dashboard/             # Widget classes
+├── Facades/               # Rocket facade
+├── Forms/Components/      # Form field components
+├── Http/Controllers/     # Inertia controllers
+├── Http/Middleware/      # Request handling
+├── Pages/                 # Page classes (CRUD + custom)
+├── Pages/Blocks/          # Block types
+├── Panel/                 # Panel & PanelProvider
+├── Resources/             # Resource & RelationManager
+├── Support/              # Contracts, Enums
+└── Tables/               # Table, Columns, Filters, Actions
+```
+
+```
+resources/js/
+├── components/
+│   ├── block-renderer.tsx
+│   ├── widget-renderer.tsx
+│   ├── data-table.tsx
+│   ├── record-form.tsx
+│   └── ui/               # shadcn/ui components
+├── lib/
+│   ├── types.ts          # TypeScript types
+│   └── utils.ts
+└── pages/
+    ├── page.tsx
+    └── dashboard.tsx
+```
 
 ## Testing
 
@@ -148,16 +268,6 @@ cd vendor/maherelgamil/rocketphp
 composer install
 ./vendor/bin/pest
 ```
-
-## Roadmap
-
-Shipped in package development: forms, create/edit pages, file upload,
-table search/sort/pagination, optional panel **dashboard** with widgets,
-row/bulk delete actions (with confirmations), table **filters** (select,
-ternary, date range, trashed), `copyable` columns, nav icons, per-page size.
-
-Still open / future: **global search** (e.g. Cmd+K), **relation managers**,
-richer notifications/toasts, i18n, multi-tenancy helpers.
 
 ## License
 

@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use MaherElGamil\Rocket\Http\Controllers\DashboardController;
 use MaherElGamil\Rocket\Http\Controllers\GlobalSearchController;
 use MaherElGamil\Rocket\Http\Controllers\NotificationController;
+use MaherElGamil\Rocket\Http\Controllers\PageController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
 use MaherElGamil\Rocket\Http\Middleware\HandleRocketRequests;
 use MaherElGamil\Rocket\Http\Middleware\RenderRocketErrorPages;
@@ -118,16 +119,30 @@ final class PanelManager
                     ->name('notifications.read');
             }
 
+            Route::get('pages/{page}', [PageController::class, 'show'])
+                ->defaults('panelId', $panel->id())
+                ->name('pages.show')
+                ->where('page', '[a-z0-9\-_]+');
+
+            Route::post('pages/{page}/actions/{action}', [PageController::class, 'action'])
+                ->defaults('panelId', $panel->id())
+                ->name('pages.action')
+                ->where('page', '[a-z0-9\-_]+')
+                ->where('action', '[a-z0-9\-_]+');
+
             Route::post('{resource}/bulk-actions/{bulkAction}', [ResourceController::class, 'bulkAction'])
                 ->defaults('panelId', $panel->id())
                 ->name('resource.bulk-action')
                 ->where('resource', $resourceConstraint)
                 ->where('bulkAction', '[a-z0-9\-_]+');
 
-            Route::post('{resource}/{record}/actions/{action}', [ResourceController::class, 'rowAction'])
+            // Row action and custom-page action share the same shape
+            // (/{resource}/{x}/actions/{action}); a single dispatcher
+            // decides whether {x} is a record id or a custom page slug.
+            Route::post('{resource}/{recordOrPage}/actions/{action}', [ResourceController::class, 'recordOrPageAction'])
                 ->defaults('panelId', $panel->id())
                 ->name('resource.row-action')
-                ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint])
+                ->where(['resource' => $resourceConstraint, 'recordOrPage' => $recordConstraint])
                 ->where('action', '[a-z0-9\-_]+');
 
             Route::get('{resource}', [ResourceController::class, 'index'])
@@ -159,6 +174,14 @@ final class PanelManager
                 ->defaults('panelId', $panel->id())
                 ->name('resource.view')
                 ->where(['resource' => $resourceConstraint, 'record' => $recordConstraint]);
+
+            Route::get('{resource}/{pageSlug}', [ResourceController::class, 'customPage'])
+                ->defaults('panelId', $panel->id())
+                ->name('resources.custom-page')
+                ->where([
+                    'resource' => $resourceConstraint,
+                    'pageSlug' => '[a-z0-9\-_]+',
+                ]);
 
             Route::match(['put', 'patch'], '{resource}/{record}', [ResourceController::class, 'update'])
                 ->defaults('panelId', $panel->id())

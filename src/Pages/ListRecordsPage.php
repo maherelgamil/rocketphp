@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaherElGamil\Rocket\Resources\Pages;
+namespace MaherElGamil\Rocket\Pages;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -10,10 +10,16 @@ use Inertia\Response;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Tables\Table;
 
-class ListRecords extends Page
+class ListRecordsPage extends ResourcePage
 {
-    public function handle(Request $request, Panel $panel, string $resource): Response
+    protected static function getAuthAbility(): string
     {
+        return 'viewAny';
+    }
+
+    public function handle(Request $request, Panel $panel): Response
+    {
+        $resource = $this->getResource();
         $resource::authorizeForRequest($request, 'viewAny');
 
         $table = $resource::table(Table::make($resource));
@@ -29,15 +35,7 @@ class ListRecords extends Page
             ),
         );
 
-        $perPageOptions = array_values(array_unique(array_filter(
-            array_map('intval', (array) config('rocket.pagination.per_page_options', [10, 25, 50, 100])),
-            fn (int $n) => $n >= (int) config('rocket.pagination.min_per_page', 1)
-                && $n <= (int) config('rocket.pagination.max_per_page', 100),
-        )));
-        sort($perPageOptions);
-
         $query = $resource::query();
-
         $table->applyFilters($query, $request);
 
         if ($search !== '') {
@@ -64,13 +62,13 @@ class ListRecords extends Page
             })
             ->all();
 
-        $tableFilters = array_map(
-            static fn ($filter) => $filter->toSchema($request),
-            $table->getFilters(),
-        );
-
-        return Inertia::render(static::component(), [
+        return Inertia::render($this->component(), [
             'panel' => $panel->toSharedProps(),
+            'page' => [
+                'title' => $this->getTitle(),
+                'subtitle' => $this->getSubtitle(),
+                'slug' => $this->getSlug(),
+            ],
             'resource' => [
                 'slug' => $resource::getSlug(),
                 'label' => $resource::getLabel(),
@@ -84,7 +82,10 @@ class ListRecords extends Page
             'row_actions' => $table->rowActionsToArray(),
             'row_actions_overflow_after' => $table->getActionsOverflowAfter(),
             'bulk_actions' => $table->bulkActionsToArray(),
-            'table_filters' => $tableFilters,
+            'table_filters' => array_map(
+                static fn ($filter) => $filter->toSchema($request),
+                $table->getFilters(),
+            ),
             'records' => $records,
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
@@ -94,7 +95,11 @@ class ListRecords extends Page
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
             ],
-            'per_page_options' => $perPageOptions,
+            'per_page_options' => array_values(array_unique(array_filter(
+                array_map('intval', (array) config('rocket.pagination.per_page_options', [10, 25, 50, 100])),
+                fn (int $n) => $n >= (int) config('rocket.pagination.min_per_page', 1)
+                    && $n <= (int) config('rocket.pagination.max_per_page', 100),
+            ))),
             'filters' => [
                 'search' => $search,
                 'sort' => $sort,
@@ -105,8 +110,19 @@ class ListRecords extends Page
         ]);
     }
 
-    public static function component(): string
+    public function component(): string
     {
         return 'rocket/ListRecords';
+    }
+
+    public function can(Request $request): bool
+    {
+        $resource = $this->getResource();
+
+        if ($resource === null) {
+            return parent::can($request);
+        }
+
+        return $resource::can($request, 'viewAny');
     }
 }

@@ -9,9 +9,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Inertia\Response;
 use MaherElGamil\Rocket\Forms\Components\BelongsTo;
 use MaherElGamil\Rocket\Forms\Components\Field;
 use MaherElGamil\Rocket\Forms\Form;
+use MaherElGamil\Rocket\Http\Controllers\Concerns\DispatchesPages;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
 use MaherElGamil\Rocket\Tables\Table;
@@ -19,13 +21,29 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class ResourceController extends Controller
 {
+    use DispatchesPages;
+
     public function __construct(private readonly PanelManager $panels) {}
+
+    protected function panels(): PanelManager
+    {
+        return $this->panels;
+    }
 
     public function index(Request $request, string $resource)
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);
 
         return $this->dispatchPage($request, $panel, $resourceClass, 'index');
+    }
+
+    public function page(Request $request, string $resource, ?string $page = null)
+    {
+        [$panel, $resourceClass] = $this->resolve($request, $resource);
+
+        $key = $page ?? 'index';
+
+        return $this->dispatchPage($request, $panel, $resourceClass, $key);
     }
 
     public function create(Request $request, string $resource)
@@ -39,14 +57,84 @@ final class ResourceController extends Controller
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);
 
-        return $this->dispatchPage($request, $panel, $resourceClass, 'edit');
+        return $this->dispatchRecordPage($request, $panel, $resourceClass, 'edit', $record);
     }
 
     public function view(Request $request, string $resource, string|int $record)
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);
 
-        return $this->dispatchPage($request, $panel, $resourceClass, 'view');
+        return $this->dispatchRecordPage($request, $panel, $resourceClass, 'view', $record);
+    }
+
+    public function customPage(Request $request, string $resource, string $pageSlug): Response
+    {
+        [$panel, $resourceClass] = $this->resolve($request, $resource);
+
+        $pageClass = $this->findCustomPageClass($resourceClass, $pageSlug);
+
+        if ($pageClass === null) {
+            throw new NotFoundHttpException("Page [{$pageSlug}] not defined for resource [{$resource}].");
+        }
+
+        return $this->dispatchToPage($request, $panel, $pageClass, $resourceClass);
+    }
+
+    public function customPageAction(Request $request, string $resource, string $pageSlug, string $actionName): mixed
+    {
+        [, $resourceClass] = $this->resolve($request, $resource);
+
+        $pageClass = $this->findCustomPageClass($resourceClass, $pageSlug);
+
+        if ($pageClass === null) {
+            throw new NotFoundHttpException("Page [{$pageSlug}] not defined for resource [{$resource}].");
+        }
+
+        /** @var \MaherElGamil\Rocket\Pages\ResourcePage $page */
+        $page = (new $pageClass)->resource($resourceClass);
+        $page->mount($request);
+
+        abort_unless($page->can($request), 403);
+
+        $action = collect($page->actions())
+            ->first(fn ($a) => $a->getName() === $actionName);
+
+        abort_if($action === null, 404);
+
+        $callback = $action->getCallback();
+
+        if ($callback === null) {
+            return redirect()->back();
+        }
+
+        $result = $callback($request);
+
+        if ($result instanceof RedirectResponse) {
+            return $result;
+        }
+
+        return redirect()->back();
+    }
+
+    /**
+     * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resourceClass
+     * @return class-string<\MaherElGamil\Rocket\Pages\ResourcePage>|null
+     */
+    private function findCustomPageClass(string $resourceClass, string $pageSlug): ?string
+    {
+        $reserved = ['index', 'create', 'edit', 'view'];
+
+        foreach ($resourceClass::getPages() as $key => $cls) {
+            if (in_array($key, $reserved, true)) {
+                continue;
+            }
+
+            if ($key === $pageSlug) {
+                return $cls;
+            }
+        }
+
+        return null;
     }
 
     public function lookup(Request $request, string $resource, string $field): JsonResponse
@@ -125,6 +213,22 @@ final class ResourceController extends Controller
             ->with('success', $resourceClass::getLabel().' deleted.');
     }
 
+    /**
+     * Dispatcher that decides whether `{recordOrPage}` is a record id or a
+     * custom page slug, then forwards to the appropriate handler.
+     */
+    public function recordOrPageAction(Request $request, string $resource, string $recordOrPage, string $action): mixed
+    {
+        [, $resourceClass] = $this->resolve($request, $resource);
+
+        // Prefer custom page match if the slug maps to a registered custom page.
+        if ($this->findCustomPageClass($resourceClass, $recordOrPage) !== null) {
+            return $this->customPageAction($request, $resource, $recordOrPage, $action);
+        }
+
+        return $this->rowAction($request, $resource, $recordOrPage, $action);
+    }
+
     public function rowAction(Request $request, string $resource, string|int $record, string $action): RedirectResponse
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);
@@ -198,19 +302,12 @@ final class ResourceController extends Controller
      */
     private function resolve(Request $request, string $resourceSlug): array
     {
-        $panelId = $request->route()->defaults['panelId'] ?? null;
-
-        if ($panelId === null) {
-            throw new NotFoundHttpException('Rocket panel not resolved for this route.');
-        }
-
-        $panel = $this->panels->get($panelId);
-        $this->panels->setCurrent($panelId);
+        $panel = $this->resolvePanel($request);
 
         $resource = $panel->findResourceBySlug($resourceSlug);
 
         if ($resource === null) {
-            throw new NotFoundHttpException("Resource [{$resourceSlug}] not found in panel [{$panelId}].");
+            throw new NotFoundHttpException("Resource [{$resourceSlug}] not found in panel [{$panel->id()}].");
         }
 
         return [$panel, $resource];
@@ -228,6 +325,29 @@ final class ResourceController extends Controller
             throw new NotFoundHttpException("Page [{$pageKey}] not defined for this resource.");
         }
 
-        return (new $pageClass)->handle($request, $panel, $resource);
+        return $this->dispatchToPage($request, $panel, $pageClass, $resource);
+    }
+
+    /**
+     * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resource
+     */
+    private function dispatchRecordPage(
+        Request $request,
+        Panel $panel,
+        string $resource,
+        string $pageKey,
+        string|int $recordId
+    ) {
+        $pages = $resource::getPages();
+        $pageClass = $pages[$pageKey] ?? null;
+
+        if ($pageClass === null) {
+            throw new NotFoundHttpException("Page [{$pageKey}] not defined for this resource.");
+        }
+
+        /** @var Model $record */
+        $record = $resource::query()->findOrFail($recordId);
+
+        return $this->dispatchToPageWithRecord($request, $panel, $pageClass, $resource, $record);
     }
 }

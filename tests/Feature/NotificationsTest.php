@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Auth\GenericUser;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -59,7 +60,7 @@ function registerNotificationsPanel(bool $enabled = true): string
 function insertNotification(int $userId, array $data = [], bool $read = false): string
 {
     $id = (string) Str::uuid();
-    \Illuminate\Support\Facades\DB::table('notifications')->insert([
+    DB::table('notifications')->insert([
         'id' => $id,
         'type' => 'App\\Notifications\\TestNotification',
         'notifiable_type' => GenericUser::class,
@@ -158,21 +159,21 @@ it('markRead sets read_at on a single notification', function () {
 
     $response->assertOk();
     expect($response->json('unread_count'))->toBe(0);
-    expect(\Illuminate\Support\Facades\DB::table('notifications')->where('id', $id)->value('read_at'))->not->toBeNull();
+    expect(DB::table('notifications')->where('id', $id)->value('read_at'))->not->toBeNull();
 });
 
 it('markAllRead zeroes unread count but preserves notification rows', function () {
     $path = registerNotificationsPanel();
     insertNotification(1);
     insertNotification(1);
-    $beforeCount = \Illuminate\Support\Facades\DB::table('notifications')->count();
+    $beforeCount = DB::table('notifications')->count();
 
     $response = test()->postJson("/{$path}/notifications/read-all");
 
     $response->assertOk();
     expect($response->json('unread_count'))->toBe(0);
-    expect(\Illuminate\Support\Facades\DB::table('notifications')->count())->toBe($beforeCount);
-    expect(\Illuminate\Support\Facades\DB::table('notifications')->whereNull('read_at')->count())->toBe(0);
+    expect(DB::table('notifications')->count())->toBe($beforeCount);
+    expect(DB::table('notifications')->whereNull('read_at')->count())->toBe(0);
 });
 
 it('users only see their own notifications', function () {

@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace MaherElGamil\Rocket\Resources\Pages;
+namespace MaherElGamil\Rocket\Pages;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,22 +11,33 @@ use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Resources\RelationManagers\RelationManagerRenderer;
 
-class EditRecord extends Page
+class EditRecordPage extends ResourcePage
 {
-    /**
-     * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resource
-     */
-    public function handle(Request $request, Panel $panel, string $resource): Response
+    protected static function getAuthAbility(): string
     {
-        /** @var Model $record */
+        return 'update';
+    }
+
+    public function handle(Request $request, Panel $panel): Response
+    {
+        $resource = $this->getResource();
         $record = $resource::query()->findOrFail($request->route('record'));
+
+        $this->setRecord($record);
 
         $resource::authorizeForRequest($request, 'update', $record);
 
         $form = $resource::form(Form::make($resource));
+        $indexUrl = $panel->url($resource::getSlug());
+        $editUrl = $panel->url($resource::getSlug().'/'.$record->getKey());
 
-        return Inertia::render(static::component(), [
+        return Inertia::render($this->component(), [
             'panel' => $panel->toSharedProps(),
+            'page' => [
+                'title' => $this->getTitle(),
+                'subtitle' => $this->getSubtitle(),
+                'slug' => $this->getSlug(),
+            ],
             'resource' => [
                 'slug' => $resource::getSlug(),
                 'label' => $resource::getLabel(),
@@ -42,17 +52,36 @@ class EditRecord extends Page
             'state' => $form->extractState($record),
             'action' => [
                 'method' => 'patch',
-                'url' => $panel->url($resource::getSlug().'/'.$record->getKey()),
+                'url' => $editUrl,
             ],
-            'index_url' => $panel->url($resource::getSlug()),
+            'index_url' => $indexUrl,
             'relation_managers' => RelationManagerRenderer::render($resource::relationManagers(), $record, $request),
             'relation_managers_layout' => $resource::relationManagersLayout(),
             'query' => $request->query(),
         ]);
     }
 
-    public static function component(): string
+    public function component(): string
     {
         return 'rocket/EditRecord';
+    }
+
+    public function can(Request $request): bool
+    {
+        $resource = $this->getResource();
+
+        if ($resource === null) {
+            return parent::can($request);
+        }
+
+        $recordId = $request->route('record');
+
+        if ($recordId === null) {
+            return $resource::can($request, 'create');
+        }
+
+        $record = $resource::query()->find($recordId);
+
+        return $record && $resource::can($request, 'update', $record);
     }
 }
