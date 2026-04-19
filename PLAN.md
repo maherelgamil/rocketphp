@@ -27,9 +27,11 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 - `Resource` abstract: `ListRecords`, `CreateRecord`, `EditRecord`, `ViewRecord`; store / update / destroy
 - `ResourceController` + optional row / bulk action routes
 - Panel-scoped AJAX lookup route (`{resource}/lookup/{field}`) for searchable relation fields
-- Dashboard route + widgets
+- Dashboard route + widgets *(shipped)*
+- Custom pages *(shipped)* — `Page` classes discoverable via `Panel::discoverPages()`
 - Laravel Gate/Policy integration (`viewAny`, `view`, `create`, `update`, `delete`); nav auto-filtered
 - `RenderRocketErrorPages` middleware converts 403 / 404 / 419 / 500 GET responses into Inertia error pages
+- Global search *(shipped)* — `⌘K` palette with cross-resource search
 
 ### Forms
 - `Field` base + abstract schema; `Form::applyAfterSave()` + `Field::afterSave()` hook
@@ -59,10 +61,16 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 - `rocket.pagination.relation_manager.per_page` config (default `5`) for smaller nested-table pages
 - `EditRecord` / `ViewRecord` render below the form; preserve sibling state on navigation
 
+### Widgets *(shipped)*
+- Widgets can be displayed on resource pages (list, create, edit, view)
+- `Resource::widgets()` + `Resource::getWidgets($page)` for page-specific rendering
+- `CanRenderOnPages` trait with `->only(['list', 'create', 'edit', 'view'])`
+- Widgets exposed via `toArray()` and passed to Inertia responses
+
 ### Frontend
 - Self-contained React entrypoint (`rocket.tsx`) + pages: list, create, edit, view, dashboard, error
 - **shadcn components:** badge, button, card, input, label, select, skeleton, switch, table, textarea, popover, calendar, sonner, dropdown-menu
-- **Responsive `PanelShell`:** collapsible desktop sidebar + mobile slide-in drawer
+- **Responsive `PanelShell`:** collapsible desktop sidebar + mobile slide-in drawer *(configurable)*
 - Flash-to-toast wiring via `useFlashToast` hook
 - Semantic palette mapping (`badgeColorClasses`) with `dark:` variants
 - Lucide icons rendered dynamically via `lucide-react/dynamic`
@@ -80,114 +88,40 @@ Each phase below includes a scope statement, backend / frontend / tests breakdow
 
 ---
 
-## Phase 1 — Global Search (⌘K palette)
+## Phase 1 — Global Search (⌘K palette) *(shipped)*
 
-**Goal.** Panel-wide command dialog that searches across all resources the user can `viewAny`, with a single shortcut (`⌘K` / `Ctrl+K`).
-
-### Backend
 - `Resource::globalSearchColumns(): array` — columns to search; return `[]` to opt out.
 - `Resource::globalSearchResult(Model $record): array` — shape: `{ title, description?, url, icon? }`.
-- `Resource::getGlobalSearchEloquentQuery(): Builder` — allows scoped searches (e.g. `with()` eager-loads, soft-delete filtering).
-- New `GlobalSearchController` at `{panel}/search?q=...` returning JSON. Fan out across resources, filter by `viewAny` policy, per-resource `take(5)`, overall cap `50`.
+- `Resource::getGlobalSearchEloquentQuery(): Builder` — allows scoped searches.
+- `GlobalSearchController` at `{panel}/search?q=...` returns JSON. Fan out across resources, filter by `viewAny` policy, per-resource `take(5)`, overall cap `50`.
 - Panel config `Panel::globalSearchEnabled(bool)` + `Panel::globalSearchPlaceholder(string)`.
 
-### Frontend
-- New `<GlobalSearchDialog />` using `cmdk` (add to deps) rendered inside `PanelShell`.
-- Keyboard shortcut registration — `⌘K` / `Ctrl+K` toggles open. `Esc` closes. `↑↓` navigate, `Enter` visits.
-- Debounced (250ms) fetch via `router.visit({ only })` or plain `fetch` to the search endpoint.
-- Grouped results per resource with the resource label as section header; each result shows title, optional description, resource icon.
-- Empty state, loading spinner, "no results" copy.
-
-### Tests
-- `GlobalSearchControllerTest`: unauthenticated → 401/403; authenticated user sees only resources they `viewAny`; query parameter sanitization; per-resource result cap; disabled panel returns 404.
-- Opt-out: resource with `globalSearchColumns() = []` never appears in results.
-- Scope: custom `getGlobalSearchEloquentQuery` is respected.
-
-### Done when
-- Keyboard shortcut + palette work across every host-app resource.
-- Returns ≤ 5 results per resource, ≤ 50 total, always within 300ms on a 10k-row table with indexed columns.
-- 3+ new Pest tests green.
-- No regressions in the 99-test baseline.
-
 ---
 
-## Phase 2 — Theming
+## Phase 2 — Theming *(shipped)*
 
-**Goal.** Consumers can rebrand the panel (colors, radii, density, font) without forking classes or Tailwind config.
-
-### Backend
-- `Panel::theme(array $tokens)` accepting a token map — `primary`, `accent`, `radius`, `density` (compact/default/comfortable), `font`.
+- `Panel::setPrimaryColor()`, `setAccentColor()`, `setFont()`, `setRadius()`, `setDensity()`.
 - Serialize tokens into `Panel::toSharedProps()` as `theme`.
-
-### Frontend
-- `ThemeProvider` component mounted by `PanelShell` — injects a `<style>` block setting CSS variables on `:root` (`--rocket-primary`, `--rocket-radius`, etc.).
-- Refactor existing shadcn components to read from those variables instead of hard-coded Tailwind tokens where they differ.
-- Dark-mode aware: each token takes `{ light, dark }` or a single string (shared).
-- Density switch scales `--rocket-gap`, `--rocket-input-height`, `--rocket-font-size` — wire the three most-visible components (table rows, form fields, sidebar nav).
-
-### Tests
-- `PanelTest::it_serializes_theme_tokens`.
-- Smoke test: rendering the panel with an overridden `primary` exposes the override in the Inertia payload.
-- Frontend: Playwright / browser smoke for contrast (optional; defer if painful).
-
-### Done when
-- Host app can set a brand color + radius in `AdminPanelProvider` and every panel page picks it up.
-- Existing color classes (badge palette) remain the canonical way to pick per-record colors; theming only affects chrome.
-- README section: "Theming" with before/after screenshots.
+- CSS variables injected via `PanelShell` for dynamic theming.
+- Density scales `--rocket-gap`, `--rocket-input-height`, `--rocket-font-size`.
 
 ---
 
-## Phase 3 — Notifications Center
+## Phase 3 — Notifications Center *(shipped)*
 
-**Goal.** Unread-count badge in the topbar; dropdown showing recent notifications; integrates with Laravel's database notifications table.
-
-### Backend
-- `rocket_notifications` table migration (wraps Laravel's `notifications` table — reuse if consumer has already published it).
-- Panel-level `Panel::notificationsEnabled(bool)` + shared prop `notifications = { unread_count, recent: [...] }` (with `Inertia::optional()` for the recent list — only fetched when the panel asks for it).
-- `NotificationController` with `index` (paginated full list), `markRead($id)`, `markAllRead`.
-- Support Laravel's `Notifiable` contract — if `$panel->getAuthUser()` implements it, we use it unchanged.
-
-### Frontend
+- `Panel::notificationsEnabled(bool)` + shared prop `notifications = { enabled, urls }`.
+- `NotificationController` with `index`, `recent`, `markRead`, `markAllRead` endpoints.
 - Topbar bell icon with count badge.
-- Popover listing the 10 most recent notifications; each has icon, title, timestamp, "mark read" action.
-- "View all" link → full page at `{panel}/notifications`.
-- Deferred prop pattern: `unread_count` is eager, `recent` is deferred for fast first paint.
-- Real-time nice-to-have: opt-in Echo listener (gated by `rocket.notifications.realtime = true`) wiring to the user's private channel.
-
-### Tests
-- `NotificationControllerTest` for index + mark actions; policy check ensures users only see their own notifications.
-- Inertia-level: shared-prop `unread_count` is present + correct; `recent` only loads when `only` param requests it.
-- Mark-all-read empties the unread set but preserves history.
-
-### Done when
-- Host app can dispatch a Laravel `Notification` targeting the panel user, and the bell shows unread count within one Inertia partial refresh.
-- Bell dropdown visually polished (spacing, empty state, long-title truncation).
-- Full notifications page paginates via `DataTable`.
+- Popover showing recent notifications with "mark read" action.
 
 ---
 
-## Phase 4 — Widget Library
+## Phase 4 — Widget Library *(shipped)*
 
-**Goal.** Ship four production-quality dashboard widgets that consumers can drop into `Dashboard::widgets()` without writing JSX.
-
-### Backend
-- `StatWidget` — big number + delta (`->compareTo(Builder $previousPeriod)`), trend indicator, optional sparkline data.
-- `ChartWidget` (line/bar/area) — builds data server-side; uses Recharts on the frontend. API: `->data(Builder | Closure)`, `->interval('day' | 'week' | 'month')`, `->type('line' | 'bar' | 'area')`.
-- `RecentRecordsWidget` — wraps a `Table` with a fixed `limit` and a "View all" link to the resource list.
-- `ActivityFeedWidget` — renders a vertical timeline from an arbitrary query (or from Spatie's activitylog if present).
-
-### Frontend
-- Recharts added to deps (lazy-loaded so dashboard bundle doesn't bloat every page).
-- Each widget ships as a distinct React component under `components/widgets/`.
-- All widgets support a loading skeleton (Inertia deferred props) and an empty state.
-
-### Tests
-- Serialization test per widget type (`toArray()` shape matches schema).
-- `ChartWidget` aggregation: feed synthetic data, assert bucketing by day/week/month is correct across DST boundaries.
-
-### Done when
-- Dashboard demo in host app uses all four widgets with real models.
-- README "Dashboard" section includes a widget cookbook.
+- **Backend:** `StatWidget`, `ChartWidget`, `TableWidget`, `RecentRecordsWidget`, `ActivityFeedWidget`.
+- **Resource widgets:** `Resource::widgets()` + `CanRenderOnPages` trait with `->only([...])`.
+- **Frontend:** Lazy-loaded Recharts for chart widget.
+- All widgets support column span, loading skeleton, empty state.
 
 ---
 
@@ -290,10 +224,8 @@ Each phase below includes a scope statement, backend / frontend / tests breakdow
 
 ## Recommended order
 
-1. **Global search (Phase 1)** — highest-visibility polish now that relation managers have landed; reuses the searchable `BelongsTo` shape.
-2. **Theming (Phase 2)** — unblocks consumers who want to rebrand before shipping to their users.
-3. **Notifications (Phase 3)** — pairs well with theming and completes the "panel chrome" feel.
-4. **Widget library (Phase 4)** — moves the dashboard from demo to useful.
+Phases 1-4 shipped. Remaining:
+
 5. **i18n (Phase 5)** — before 1.0 tag; do it once, all strings in one pass.
 6. **Import / export (Phase 6)** — after 1.0 tag; it's additive.
 7. **Audit log (Phase 7)** and **multi-tenancy (Phase 8)** — post-1.0 integration surfaces; drive by real consumer demand rather than speculation.
