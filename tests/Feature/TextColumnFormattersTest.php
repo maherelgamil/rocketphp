@@ -48,6 +48,19 @@ it('applies prefix, suffix, and limit in a predictable order', function () {
     expect($column->render($record))->toBe('> Hello…!');
 });
 
+it('renders markdown input to sanitized HTML when ->markdown() is set', function () {
+    $column = TextColumn::make('body')->markdown();
+    $record = new Widget(['body' => "**hi** <script>alert(1)</script>"]);
+
+    $html = $column->render($record);
+
+    expect($html)->toContain('<strong>hi</strong>');
+    expect($html)->not->toContain('<script>');
+
+    $schema = $column->toArray();
+    expect($schema['extra']['markdown'])->toBeTrue();
+});
+
 it('leaves null and empty states untouched', function () {
     $column = TextColumn::make('title')->money()->prefix('$');
 

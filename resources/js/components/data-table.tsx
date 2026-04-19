@@ -672,7 +672,17 @@ function renderCell(col: Column, value: unknown) {
     }
 
     const copyable = Boolean(col.extra.copyable);
+    const isMarkdown = Boolean(col.extra.markdown);
     const text = String(value);
+
+    if (isMarkdown) {
+        return (
+            <div
+                className="prose prose-sm max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: text }}
+            />
+        );
+    }
 
     if (copyable) {
         return (

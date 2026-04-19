@@ -14,6 +14,8 @@ final class TextColumn extends Column
 {
     private bool $copyable = false;
 
+    private bool $markdown = false;
+
     private ?string $prefix = null;
 
     private ?string $suffix = null;
@@ -28,6 +30,13 @@ final class TextColumn extends Column
     public function copyable(bool $copyable = true): self
     {
         $this->copyable = $copyable;
+
+        return $this;
+    }
+
+    public function markdown(bool $markdown = true): self
+    {
+        $this->markdown = $markdown;
 
         return $this;
     }
@@ -120,6 +129,13 @@ final class TextColumn extends Column
             $state = $state.$this->suffix;
         }
 
+        if ($this->markdown) {
+            $state = Str::markdown($state, [
+                'html_input' => 'escape',
+                'allow_unsafe_links' => false,
+            ]);
+        }
+
         return $state;
     }
 
@@ -127,6 +143,7 @@ final class TextColumn extends Column
     {
         return [
             'copyable' => $this->copyable,
+            'markdown' => $this->markdown,
         ];
     }
 
