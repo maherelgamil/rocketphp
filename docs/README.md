@@ -11,17 +11,18 @@ A **Server-Driven UI** framework for Laravel + Inertia.js + React.
 
 - [Panel Configuration](panels/configuration.md)
 - [Resources](resources/overview.md)
-- [Tables](tables/columns.md)
+- Tables — [Columns](tables/columns.md) · [Filters](tables/filters.md) · [Actions](tables/actions.md)
 - [Forms](forms/fields.md)
 - [Widgets](widgets/overview.md)
+- [Page Blocks](pages/blocks.md)
 - [Authorization](authorization.md)
+- [Global Search](global-search.md)
 - [Internationalization & RTL](i18n.md)
 
 ## Concepts
 
-RocketPHP sends **UI schemas** (JSON) from PHP to a stateless React client.
-Tables, forms, widgets, and pages are declared in PHP; the client renders
-them deterministically. No client-side API design, no duplicated validation,
-no frontend state machine for CRUD.
+- [Server-Driven UI](advanced/server-driven-ui.md) — the pattern Rocket is built on
 
-See the [package README](../README.md) for the full overview.
+## Contributing
+
+- [Contributing guide](contributing.md)
