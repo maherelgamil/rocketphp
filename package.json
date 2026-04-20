@@ -41,5 +41,8 @@
         "recharts": "^3.8.1",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.0.1"
+    },
+    "devDependencies": {
+        "shadcn": "^4.3.0"
     }
 }

@@ -1,14 +1,27 @@
 import { Link } from '@inertiajs/react';
-import { Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { useFlashToast } from '../hooks/use-flash-toast';
-import { cn } from '../lib/utils';
 import { create__ } from '../lib/i18n';
+import { cn } from '../lib/utils';
 import GlobalSearchDialog from './global-search-dialog';
 import LocaleSwitcher from './locale-switcher';
 import NavIcon from './nav-icon';
 import NotificationBell from './notification-bell';
-import { Button } from './ui/button';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarRail,
+    SidebarTrigger,
+} from './ui/sidebar';
 import { Toaster } from './ui/sonner';
 
 type NavItem = {
@@ -66,8 +79,6 @@ type Props = {
     children: ReactNode;
 };
 
-const COLLAPSE_KEY = 'rocket:sidebar-collapsed';
-
 const DENSITY_VARS: Record<string, Record<string, string>> = {
     compact: { '--rocket-gap': '0.5rem', '--rocket-input-height': '2rem', '--rocket-font-size': '0.8125rem' },
     default: { '--rocket-gap': '0.75rem', '--rocket-input-height': '2.5rem', '--rocket-font-size': '0.875rem' },
@@ -75,13 +86,12 @@ const DENSITY_VARS: Record<string, Record<string, string>> = {
 };
 
 function buildThemeVars(theme: PanelTheme | undefined): React.CSSProperties {
-    if (!theme) return {};
     const vars: Record<string, string> = {};
-    if (theme.primary) vars['--primary'] = theme.primary;
-    if (theme.accent) vars['--accent'] = theme.accent;
-    if (theme.radius) vars['--radius'] = theme.radius;
-    if (theme.font) vars['--font-sans'] = `"${theme.font}", sans-serif`;
-    Object.assign(vars, DENSITY_VARS[theme.density ?? 'default'] ?? DENSITY_VARS.default);
+    if (theme?.primary) vars['--primary'] = theme.primary;
+    if (theme?.accent) vars['--accent'] = theme.accent;
+    if (theme?.radius) vars['--radius'] = theme.radius;
+    if (theme?.font) vars['--font-sans'] = `"${theme.font}", sans-serif`;
+    Object.assign(vars, DENSITY_VARS[theme?.density ?? 'default'] ?? DENSITY_VARS.default);
     return vars as unknown as React.CSSProperties;
 }
 
@@ -90,24 +100,8 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
 
     const __ = create__(panel.translations);
     const dir = RTL_LOCALES.includes(panel.locale) ? 'rtl' : 'ltr';
-
-    const [collapsed, setCollapsed] = useState(panel.sidebar_collapsed ?? false);
-    const [mobileOpen, setMobileOpen] = useState(false);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const stored = window.localStorage.getItem(COLLAPSE_KEY);
-        setCollapsed(stored ? stored === '1' : (panel.sidebar_collapsed ?? false));
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        window.localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
-    }, [collapsed]);
-
-    useEffect(() => {
-        setMobileOpen(false);
-    }, [activeSlug]);
+    const side = dir === 'rtl' ? 'right' : 'left';
+    const collapsible = panel.sidebar_collapsible === false ? 'none' : 'icon';
 
     const groups = panel.navigation.reduce<Record<string, NavItem[]>>((acc, item) => {
         const key = item.group ?? '';
@@ -115,181 +109,83 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
         return acc;
     }, {});
 
-    const renderNav = (compact: boolean) => (
-        <>
-            <div
-                className={cn(
-                    'flex h-16 items-center border-b',
-                    compact ? 'justify-center px-2' : 'px-6',
-                )}
-            >
-                {!compact && (
-                    <span className="text-lg font-semibold tracking-tight">{panel.brand}</span>
-                )}
-                {compact && (
-                    <span className="text-lg font-semibold tracking-tight">
-                        {panel.brand.slice(0, 1)}
-                    </span>
-                )}
-            </div>
-            <nav className={cn('flex-1 overflow-y-auto py-4', compact ? 'px-2' : 'px-3')}>
-                {Object.entries(groups).map(([group, items]) => (
-                    <div key={group || 'default'} className="mb-6 last:mb-0">
-                        {group && !compact && (
-                            <div className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                {group}
-                            </div>
-                        )}
-                        <ul className="space-y-1">
-                            {items.map((item) => (
-                                <li key={item.slug}>
-                                    <Link
-                                        href={item.url}
-                                        title={compact ? item.label : undefined}
-                                        className={cn(
-                                            'flex items-center rounded-md font-medium transition-colors text-[var(--rocket-font-size)]',
-                                            'hover:bg-accent hover:text-accent-foreground',
-                                            compact ? 'justify-center px-2 py-2' : 'px-[var(--rocket-gap)] py-[var(--rocket-gap)]',
-                                            activeSlug === item.slug
-                                                ? 'bg-accent text-accent-foreground'
-                                                : 'text-muted-foreground',
-                                        )}
-                                    >
-                                        <NavIcon name={item.icon} className={compact ? '' : 'me-2'} />
-                                        {!compact && <span>{item.label}</span>}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
-            </nav>
-        </>
-    );
-
     return (
-        <div className="flex min-h-screen bg-muted/30" dir={dir} style={buildThemeVars(panel.theme)}>
-            <aside
-                className={cn(
-                    'relative hidden shrink-0 flex-col border-e bg-card transition-[width] duration-200 md:flex',
-                    collapsed ? 'w-16' : 'w-64',
-                )}
-            >
-                {renderNav(collapsed)}
-                {panel.sidebar_collapsible !== false && (
-                    <button
-                        type="button"
-                        onClick={() => setCollapsed((v) => !v)}
-                        className="absolute -end-3 top-20 hidden size-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:text-foreground md:flex"
-                        aria-label={collapsed ? __('Expand sidebar') : __('Collapse sidebar')}
-                    >
-                        {collapsed ? (
-                            <PanelLeftOpen className="size-3.5" />
-                        ) : (
-                            <PanelLeftClose className="size-3.5" />
-                        )}
-                    </button>
-                )}
-            </aside>
-
-            {mobileOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/40 md:hidden"
-                    onClick={() => setMobileOpen(false)}
-                    aria-hidden
-                />
-            )}
-            <aside
-                className={cn(
-                    'fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e bg-card transition-transform duration-200 md:hidden',
-                    mobileOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full',
-                )}
-            >
-                <div className="flex items-center justify-between border-b px-6 py-4">
-                    <span className="text-lg font-semibold tracking-tight">{panel.brand}</span>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="size-8 p-0"
-                        onClick={() => setMobileOpen(false)}
-                        aria-label={__('Close menu')}
-                    >
-                        <X className="size-4" />
-                    </Button>
-                </div>
-                <nav className="flex-1 overflow-y-auto px-3 py-4">
-                    {Object.entries(groups).map(([group, items]) => (
-                        <div key={group || 'default'} className="mb-6 last:mb-0">
-                            {group && (
-                                <div className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                    {group}
-                                </div>
+        <div dir={dir} style={buildThemeVars(panel.theme)}>
+            <SidebarProvider defaultOpen={!(panel.sidebar_collapsed ?? false)}>
+                <Sidebar side={side} collapsible={collapsible}>
+                    <SidebarHeader>
+                        <div
+                            className={cn(
+                                'flex h-12 items-center px-2',
+                                'group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0',
                             )}
-                            <ul className="space-y-1">
-                                {items.map((item) => (
-                                    <li key={item.slug}>
-                                        <Link
-                                            href={item.url}
-                                            className={cn(
-                                                'flex items-center rounded-md px-[var(--rocket-gap)] py-[var(--rocket-gap)] text-[var(--rocket-font-size)] font-medium transition-colors',
-                                                'hover:bg-accent hover:text-accent-foreground',
-                                                activeSlug === item.slug
-                                                    ? 'bg-accent text-accent-foreground'
-                                                    : 'text-muted-foreground',
-                                            )}
-                                        >
-                                            <NavIcon name={item.icon} className="me-2" />
-                                            <span>{item.label}</span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </nav>
-            </aside>
-
-            <main className="flex-1 overflow-x-auto">
-                <div className="flex h-14 items-center justify-between border-b bg-card px-4">
-                    <div className="flex items-center md:hidden">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="size-9 p-0"
-                            onClick={() => setMobileOpen(true)}
-                            aria-label={__('Open menu')}
                         >
-                            <Menu className="size-5" />
-                        </Button>
-                        <span className="ms-2 text-base font-semibold tracking-tight">
-                            {panel.brand}
-                        </span>
-                    </div>
-                    <div className="hidden md:block" />
-                    <div className="flex items-center gap-1">
-                        {panel.global_search.enabled && (
-                            <GlobalSearchDialog
-                                url={panel.global_search.url}
-                                placeholder={panel.global_search.placeholder}
-                                __={__}
-                            />
-                        )}
-                        {panel.available_locales.length > 1 && (
-                            <LocaleSwitcher
-                                locale={panel.locale}
-                                availableLocales={panel.available_locales}
-                                switchUrl={`/${panel.path.replace(/^\/+|\/+$/g, '')}/locale`}
-                            />
-                        )}
-                        {panel.notifications?.enabled && panel.notifications.urls.index && (
-                            <NotificationBell urls={panel.notifications.urls} __={__} />
-                        )}
-                    </div>
-                </div>
-                <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
-            </main>
+                            <span className="text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+                                {panel.brand}
+                            </span>
+                            <span className="hidden text-lg font-semibold tracking-tight group-data-[collapsible=icon]:inline">
+                                {panel.brand.slice(0, 1)}
+                            </span>
+                        </div>
+                    </SidebarHeader>
+                    <SidebarContent>
+                        {Object.entries(groups).map(([group, items]) => (
+                            <SidebarGroup key={group || 'default'}>
+                                {group && <SidebarGroupLabel>{group}</SidebarGroupLabel>}
+                                <SidebarGroupContent>
+                                    <SidebarMenu>
+                                        {items.map((item) => (
+                                            <SidebarMenuItem key={item.slug}>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={activeSlug === item.slug}
+                                                    tooltip={item.label}
+                                                >
+                                                    <Link href={item.url}>
+                                                        <NavIcon name={item.icon} />
+                                                        <span>{item.label}</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        ))}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        ))}
+                    </SidebarContent>
+                    <SidebarRail />
+                </Sidebar>
+                <SidebarInset>
+                    <header className="flex h-14 items-center justify-between gap-2 border-b bg-card px-4">
+                        <div className="flex items-center gap-2">
+                            <SidebarTrigger />
+                            <span className="text-base font-semibold tracking-tight md:hidden">
+                                {panel.brand}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {panel.global_search.enabled && (
+                                <GlobalSearchDialog
+                                    url={panel.global_search.url}
+                                    placeholder={panel.global_search.placeholder}
+                                    __={__}
+                                />
+                            )}
+                            {panel.available_locales.length > 1 && (
+                                <LocaleSwitcher
+                                    locale={panel.locale}
+                                    availableLocales={panel.available_locales}
+                                    switchUrl={`/${panel.path.replace(/^\/+|\/+$/g, '')}/locale`}
+                                />
+                            )}
+                            {panel.notifications?.enabled && panel.notifications.urls.index && (
+                                <NotificationBell urls={panel.notifications.urls} __={__} />
+                            )}
+                        </div>
+                    </header>
+                    <div className="mx-auto w-full max-w-7xl p-4 md:p-8">{children}</div>
+                </SidebarInset>
+            </SidebarProvider>
             <Toaster />
         </div>
     );
