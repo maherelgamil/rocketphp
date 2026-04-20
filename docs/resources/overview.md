@@ -25,6 +25,48 @@ final class PostResource extends Resource
 }
 ```
 
+## What's required?
+
+Only `$model`. Everything else has a sensible default.
+
+| Member | Required | Default |
+| --- | --- | --- |
+| `$model` | ✅ | — |
+| `$slug` | ❌ | Kebab-case plural of the class name. |
+| `$navigationIcon` | ❌ | Generic icon. |
+| `$navigationGroup` | ❌ | Ungrouped (shown at root of sidebar). |
+| `$navigationSort` | ❌ | Alphabetical within group. |
+| `table()` | ❌ | Empty table — you'll want this for the list page. |
+| `form()` | ❌ | No form → no create/edit pages, **New** button is hidden. |
+| `widgets()` | ❌ | No widgets on resource pages. |
+| `relationManagers()` | ❌ | No relation managers on edit/view. |
+| `globalSearchColumns()` | ❌ | `[]` → resource is opted out of global search. |
+
+## Registering a resource on a panel
+
+Two options — both optional, additive, and composable.
+
+**1. Auto-discover** from a directory:
+
+```php
+$panel->discoverResources(
+    in: app_path('Rocket/Resources'),
+    for: 'App\\Rocket\\Resources',
+);
+```
+
+**2. Explicitly list** the resource classes:
+
+```php
+$panel->resources([
+    App\Rocket\Resources\UserResource::class,
+    App\Rocket\Resources\PostResource::class,
+]);
+```
+
+You can use both on the same panel — useful when most resources live in a
+discoverable directory but a few live elsewhere.
+
 ## CRUD pages
 
 Every resource gets four pages automatically:

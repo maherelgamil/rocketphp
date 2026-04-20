@@ -4,6 +4,10 @@ Forms are declared with the `Form` builder and rendered by React from a
 serialized schema. Validation rules travel with the schema — errors are
 displayed inline without a client round-trip.
 
+`form()` is **optional** on a resource. If you don't define one, the
+create/edit pages and the **New** button are hidden automatically — useful
+for read-only resources backed by an external system.
+
 ```php
 use MaherElGamil\Rocket\Forms\Components\Select;
 use MaherElGamil\Rocket\Forms\Components\TextInput;

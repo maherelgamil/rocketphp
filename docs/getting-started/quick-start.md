@@ -28,6 +28,10 @@ final class AdminPanelProvider extends PanelProvider
 }
 ```
 
+> `discoverResources()` is optional. You can instead list resources
+> explicitly with `->resources([UserResource::class])`, or skip both and
+> add them later. See [Panel Configuration](../panels/configuration.md#resources--pages).
+
 Register it in `bootstrap/providers.php`:
 
 ```php

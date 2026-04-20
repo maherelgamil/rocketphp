@@ -19,58 +19,85 @@ final class AdminPanelProvider extends PanelProvider
 }
 ```
 
+## What's required?
+
+**Nothing.** A panel with just `return $panel;` is valid — it boots with
+sensible defaults pulled from `config/rocket.php`. Every method below is
+optional and shown with its default value.
+
+All methods are optional. The tables below list defaults and notes.
+
 ## Routing
 
-| Method | Purpose |
-| --- | --- |
-| `->path(string)` | URL prefix for all panel routes (default: `admin`). |
-| `->domain(?string)` | Restrict the panel to a specific domain. |
-| `->middleware(array)` | Route middleware applied to all panel routes. |
-| `->authMiddleware(array)` | Middleware applied to authenticated routes. |
-| `->guard(string)` | Auth guard (default: `web`). |
+| Method | Default | Notes |
+| --- | --- | --- |
+| `->path(string)` | `'admin'` | URL prefix for all panel routes. |
+| `->domain(?string)` | `config('rocket.routes.domain')` (usually `null`) | Restrict the panel to a specific domain. |
+| `->middleware(array)` | `config('rocket.routes.middleware')` → `['web']` | Middleware for all panel routes. |
+| `->authMiddleware(array)` | `config('rocket.routes.auth_middleware')` → `['auth']` | Middleware for authenticated routes. |
+| `->guard(string)` | `'web'` | Auth guard. |
+| `->default()` | panel is not default | Mark this panel as the fallback when multiple are registered. |
 
 ## Branding & theme
 
-| Method | Purpose |
-| --- | --- |
-| `->brand(string)` | Brand name shown in the sidebar header. |
-| `->setPrimaryColor(string)` | Primary color (hex). |
-| `->setAccentColor(string)` | Accent color (hex). |
-| `->setFont(string)` | Font family. |
-| `->setRadius(string)` | Base border radius. |
-| `->setDensity(string)` | `default` · `compact` · `extra-compact`. |
+| Method | Default | Notes |
+| --- | --- | --- |
+| `->brand(string)` | `config('rocket.brand.name')` → `'Rocket'` | Brand name shown in the sidebar header. |
+| `->setPrimaryColor(string)` | theme default | Primary color (hex). |
+| `->setAccentColor(string)` | theme default | Accent color (hex). |
+| `->setFont(string)` | theme default | Font family. |
+| `->setRadius(string)` | theme default | Base border radius. |
+| `->setDensity(string)` | `'default'` | `default` · `compact` · `extra-compact`. |
 
 ## Layout
 
-| Method | Purpose |
-| --- | --- |
-| `->dashboardColumns(int)` | Widget grid columns (1–6). |
-| `->sidebarCollapsible(bool)` | Show/hide the collapse toggle. |
-| `->sidebarCollapsed(bool)` | Start the sidebar collapsed. |
+| Method | Default | Notes |
+| --- | --- | --- |
+| `->dashboardColumns(int)` | `3` | Widget grid columns (1–6). |
+| `->sidebarCollapsible(bool)` | `true` | Show/hide the collapse toggle. |
+| `->sidebarCollapsed(bool)` | `null` (expanded) | Start the sidebar collapsed; requires `sidebarCollapsible(true)`. |
 
 ## Features
 
-| Method | Purpose |
-| --- | --- |
-| `->globalSearchEnabled(bool)` | Toggle the `Cmd+K` global search. |
-| `->globalSearchPlaceholder(string)` | Custom placeholder text. |
-| `->notificationsEnabled(bool)` | Toggle the notifications bell. |
+| Method | Default | Notes |
+| --- | --- | --- |
+| `->globalSearchEnabled(bool)` | `true` | Toggle the `Cmd+K` global search. |
+| `->globalSearchPlaceholder(string)` | `'Search...'` | Custom placeholder text. |
+| `->notificationsEnabled(bool)` | `false` | Toggle the notifications bell. |
 
 ## Internationalization
 
-| Method | Purpose |
-| --- | --- |
-| `->locale(string)` | Default locale. |
-| `->availableLocales(array)` | Locales shown in the switcher. |
+| Method | Default | Notes |
+| --- | --- | --- |
+| `->locale(string)` | `app()->getLocale()` | Default locale. |
+| `->availableLocales(array)` | `[]` (switcher hidden) | Locales shown in the switcher. |
 
 See [Internationalization & RTL](../i18n.md) for the full i18n guide.
 
-## Discovery
+## Resources & pages
 
-| Method | Purpose |
-| --- | --- |
-| `->discoverResources(in, for)` | Auto-register resources from a directory. |
-| `->discoverPages(in, for)` | Auto-register custom pages. |
+Resources and pages are registered in one of three ways — or not at all.
+A panel with no resources is valid (e.g. a dashboard-only panel).
+
+| Method | Default | Notes |
+| --- | --- | --- |
+| `->resources(array)` | `[]` | Explicit list of resource class names. Additive: can be called multiple times. |
+| `->discoverResources(in, for)` | not called | Auto-discover resources in a directory. Can be combined with `resources()`. |
+| `->pages(array)` | `[]` | Explicit list of custom page class names. |
+| `->discoverPages(in, for)` | not called | Auto-discover pages in a directory. |
+
+Example of combining:
+
+```php
+return $panel
+    ->discoverResources(
+        in: app_path('Rocket/Resources'),
+        for: 'App\\Rocket\\Resources',
+    )
+    ->resources([
+        App\Other\BillingResource::class, // outside the discovery path
+    ]);
+```
 
 ## Full example
 
