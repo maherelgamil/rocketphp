@@ -28,10 +28,6 @@ A **Server-Driven UI** framework for Laravel + Inertia.js + React.
 
 - [Server-Driven UI](advanced/server-driven-ui.md)
 
-> Each feature's doc has an "Adding a custom …" section covering the
-> extension pattern for that primitive (columns, fields, filters,
-> widgets, blocks).
-
 ## Contributing
 
 - [Contributing guide](contributing.md)
