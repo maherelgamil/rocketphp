@@ -84,3 +84,15 @@ Tabs::make('Post')
         Tabs\Tab::make('SEO')->schema([ /* ... */ ]),
     ]);
 ```
+
+## Adding a custom field
+
+Subclass `Field` in `src/Forms/Components/` and implement `toArray()`
+with the field schema, including any serialized validation rules. Add a
+matching React component under `resources/js/components/` and cover the
+serialization in a feature test.
+
+Laravel validation rules travel as part of the schema — the client
+displays errors from the server response and never re-validates.
+
+Same three-move pattern as [custom columns](../tables/columns.md#adding-a-custom-column).

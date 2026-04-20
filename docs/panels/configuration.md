@@ -3,6 +3,29 @@
 A `Panel` is a fluent configuration object that scopes routes, resources,
 middleware, and theming. Panels are defined in a `PanelProvider` subclass.
 
+## Generate a panel
+
+```bash
+php artisan rocket:make-panel {name}
+```
+
+Creates `app/Providers/Rocket/{Name}PanelProvider.php` pre-wired to the
+`app/Rocket/Resources/` discovery path.
+
+```bash
+php artisan rocket:make-panel Admin
+```
+
+Register the generated provider in `bootstrap/providers.php`:
+
+```php
+App\Providers\Rocket\AdminPanelProvider::class,
+```
+
+The `PanelProvider` suffix is appended automatically — all three of these
+generate the same file: `Admin`, `AdminPanel`, `AdminPanelProvider`.
+
+
 ```php
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelProvider;

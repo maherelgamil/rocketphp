@@ -50,6 +50,57 @@ Common column modifiers:
 - `->alignRight()` / `->alignCenter()`
 - `->formatStateUsing(callable)` — transform the value before display
 
+## Adding a custom column
+
+Every column is a PHP class that serializes to a schema plus a React
+component that renders it. Adding one is always three moves: PHP class,
+React renderer, test.
+
+**1. PHP.** Subclass `Column` in `src/Tables/Columns/`:
+
+```php
+namespace MaherElGamil\Rocket\Tables\Columns;
+
+use Illuminate\Database\Eloquent\Model;
+
+final class ProgressColumn extends Column
+{
+    public function getValue(Model $record): mixed
+    {
+        return (int) ($record->{$this->name} ?? 0);
+    }
+
+    public function toArray(): array
+    {
+        return array_merge(parent::toArray(), [
+            'type' => 'progress',
+        ]);
+    }
+}
+```
+
+**2. React.** In `resources/js/components/data-table.tsx`, extend the
+switch that picks a cell renderer:
+
+```tsx
+case 'progress':
+    return <ProgressCell value={row[col.name]} />;
+```
+
+Create `progress-cell.tsx` with the actual DOM.
+
+**3. Test.** Add a feature test that asserts the schema:
+
+```php
+test('ProgressColumn serializes type=progress', function () {
+    expect(ProgressColumn::make('score')->toArray())
+        ->toMatchArray(['type' => 'progress', 'name' => 'score']);
+});
+```
+
+See [Contributing](../contributing.md) for the expected PR shape when
+upstreaming a primitive.
+
 ## Filters
 
 | Class | Purpose |

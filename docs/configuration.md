@@ -57,6 +57,30 @@ Panels can override each of these with `->middleware()`,
 | --- | --- | --- |
 | `brand.name` | `env('ROCKET_BRAND', 'Rocket')` | Default brand text; overridable per panel with `->brand()`. |
 
+## Publishable tags
+
+Rocket publishes its resources under separate tags so you can pick only
+what you need.
+
+| Tag | Destination | Use |
+| --- | --- | --- |
+| `rocket-config` | `config/rocket.php` | Change defaults (pagination, brand, routes). |
+| `rocket-lang` | `lang/vendor/rocket/{locale}.json` | Override translations. See [i18n](i18n.md). |
+| `rocket-views` | `resources/views/vendor/rocket/` | Override the Blade root layout. |
+| `rocket-assets` | `resources/js/vendor/rocketphp/` | Fork the React frontend. |
+
+Publish a single tag:
+
+```bash
+php artisan vendor:publish --tag=rocket-config
+```
+
+Publish everything at once:
+
+```bash
+php artisan vendor:publish --provider='MaherElGamil\Rocket\RocketServiceProvider'
+```
+
 ## Environment variables
 
 All keys that read from `env()` can be set without publishing the config:

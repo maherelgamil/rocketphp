@@ -49,3 +49,11 @@ For the main dashboard, register widgets on the panel or via a custom
 
 See [Panel Configuration](../panels/configuration.md#layout) for the
 `dashboardColumns()` setting.
+
+## Adding a custom widget
+
+Subclass the appropriate base in `src/Dashboard/` (or extend `Widget`
+directly for a new shape). A widget returns data plus rendering hints via
+`toArray()`; the React widget renderer dispatches on `type`. Add the
+React component and a feature test that asserts the schema — same
+three-move pattern as [custom columns](../tables/columns.md#adding-a-custom-column).

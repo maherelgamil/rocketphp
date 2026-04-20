@@ -3,6 +3,27 @@
 A **Resource** maps an Eloquent model to a set of auto-generated CRUD pages:
 list, create, edit, and view.
 
+## Generate a resource
+
+```bash
+php artisan rocket:make-resource {name} [--model=]
+```
+
+Generates `app/Rocket/Resources/{Name}Resource.php` bound to
+`App\Models\{Name}` by default. The stub includes an `id` column and
+`searchable(['id'])` to start from.
+
+```bash
+# Assumes App\Models\Post
+php artisan rocket:make-resource Post
+
+# Custom model namespace
+php artisan rocket:make-resource Invoice --model='Domain\Billing\Invoice'
+
+# Name already has the Resource suffix
+php artisan rocket:make-resource PostResource
+```
+
 ## Anatomy
 
 ```php

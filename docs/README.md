@@ -22,13 +22,15 @@ A **Server-Driven UI** framework for Laravel + Inertia.js + React.
 
 ## Reference
 
-- [Configuration (`config/rocket.php`)](configuration.md)
-- [Artisan Commands](cli.md)
+- [Configuration (`config/rocket.php`)](configuration.md) — all keys, defaults, and `vendor:publish` tags
 
 ## Concepts
 
 - [Server-Driven UI](advanced/server-driven-ui.md)
-- [Extending Rocket](advanced/extending.md)
+
+> Each feature's doc has an "Adding a custom …" section covering the
+> extension pattern for that primitive (columns, fields, filters,
+> widgets, blocks).
 
 ## Contributing
 

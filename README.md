@@ -96,9 +96,7 @@ Full reference in [docs/](docs/README.md).
 | [Widgets](docs/widgets/overview.md) | Dashboard + resource widgets |
 | [Authorization](docs/authorization.md) | Policies and visibility |
 | [i18n & RTL](docs/i18n.md) | Locale switcher, translations, logical layout |
-| [Configuration](docs/configuration.md) | `config/rocket.php` reference |
-| [Artisan Commands](docs/cli.md) | `rocket:make-*` generators |
-| [Extending](docs/advanced/extending.md) | Add custom columns, fields, widgets |
+| [Configuration](docs/configuration.md) | `config/rocket.php` reference and `vendor:publish` tags |
 
 ## Testing
 

@@ -65,3 +65,16 @@ SelectFilter::make('activity')
         };
     });
 ```
+
+## Adding a custom filter
+
+Subclass `Filter` in `src/Tables/Filters/`. A filter implements two
+things:
+
+- `toArray()` — the schema the React renderer reads
+- `apply(Builder $query, mixed $value)` — how the filter mutates the
+  query when the user picks a value
+
+Register the schema `type` in the filters bar renderer on the React
+side, and cover the serialization in a feature test. Same three-move
+pattern as [custom columns](columns.md#adding-a-custom-column).

@@ -42,14 +42,13 @@ Blocks can be nested. A `GridBlock` can contain widgets, HTML, or even
 other grids. Each block is an independent schema object, so the React
 renderer composes them without any page-specific code.
 
-## Custom blocks
-
-To add a new block type:
+## Adding a custom block
 
 1. Subclass a base block class in `src/Pages/Blocks/`
 2. Implement `toArray(): array` to serialize the schema
-3. Add a matching React renderer under `resources/js/components/`
+3. Add a matching React renderer in `block-renderer.tsx`
 4. Cover the serialization in a test under `tests/Feature/Pages/`
 
+Same three-move pattern as [custom columns](../tables/columns.md#adding-a-custom-column).
 See [Server-Driven UI](../advanced/server-driven-ui.md) for the broader
 pattern this follows.
