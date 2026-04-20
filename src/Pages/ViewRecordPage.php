@@ -17,10 +17,10 @@ class ViewRecordPage extends ResourcePage
         return 'view';
     }
 
-    public function handle(Request $request, Panel $panel, string $record): Response
+    public function handle(Request $request, Panel $panel): Response
     {
         $resource = static::getResource();
-        $record = $resource::query()->findOrFail($record);
+        $record = $this->getRecord() ?? $resource::query()->findOrFail($request->route('record'));
         $resource::authorizeForRequest($request, 'view', $record);
 
         $widgets = array_map(
