@@ -7,10 +7,10 @@ A **Server-Driven UI (SDUI)** framework for Laravel + Inertia.js + React + shadc
 **Server-Driven UI** is an architectural pattern where the server controls the UI structure — not just data, but *what components to render, their layout, and behavior*. Instead of the client querying APIs and building UI, the server sends a complete UI schema (JSON) that the client renders deterministically.
 
 ```
-┌─────────────┐    UI Schema (JSON)    ┌─────────────┐
-│   Laravel  │ ─────────────────────► │    React   │
-│   (PHP)   │   "render this"       │  (client)  │
-└─────────────┘                     └─────────────┘
+┌───────────┐    UI Schema (JSON)     ┌───────────┐
+│  Laravel  │ ──────────────────────► │   React   │
+│   (PHP)   │     "render this"       │  (client) │
+└───────────┘                         └───────────┘
 ```
 
 RocketPHP sends widget definitions, table schemas, form configurations, and page blocks from PHP. The React layer is *stateless* — it simply renders what it receives.
@@ -29,7 +29,7 @@ RocketPHP sends widget definitions, table schemas, form configurations, and page
 - Inertia.js v3 (`inertiajs/inertia-laravel`)
 - Tailwind CSS v4 in the host app
 - React 19 + `@inertiajs/react`
-- shadcn/ui v1
+- shadcn/ui components
 
 ## Installation
 
@@ -134,7 +134,21 @@ final class UserResource extends Resource
 ```
 
 Visit `/admin/users` — you'll get a sortable, searchable, paginated table.
-Define `form()` on the resource to enable create/edit and the **New** button.
+
+Define `form()` on the resource to enable create/edit and the **New** button:
+
+```php
+use MaherElGamil\Rocket\Forms\Components\TextInput;
+use MaherElGamil\Rocket\Forms\Form;
+
+public static function form(Form $form): Form
+{
+    return $form->schema([
+        TextInput::make('name')->required(),
+        TextInput::make('email')->email()->required()->unique(),
+    ]);
+}
+```
 
 ## Features
 
@@ -158,7 +172,9 @@ $panel
     ->setAccentColor('#8b5cf6')
     ->setFont('Inter')
     ->setRadius('0.5rem')
-    ->setDensity('default');              // default | compact | extra-compact
+    ->setDensity('default')                // default | compact | extra-compact
+    ->locale('en')                         // Default locale
+    ->availableLocales(['en', 'ar']);     // Locales shown in the switcher
 ```
 
 ### Resources
@@ -244,19 +260,31 @@ final class UserResource extends Resource
 - Section (field grouping)
 - Tabs (tabbed forms)
 
-### Dashboard Widgets
-
-- **Stat** — Single value with label
-- **Chart** — Line, Bar, Area charts
-- **Table** — Data table widget
-- **Recent Records** — Latest records from a resource
-- **Activity Feed** — Activity timeline
-
 ### Page Blocks (Custom Pages)
 
-- **Widget** — Embed dashboard widgets
-- **Grid** — Multi-column layouts
-- **HTML** — Raw HTML content
+- **Widget** (`WidgetBlock`) — Embed dashboard widgets
+- **Grid** (`GridBlock`) — Multi-column layouts
+- **HTML** (`HtmlBlock`) — Raw HTML content
+
+### Internationalization (i18n) & RTL
+
+Rocket ships with a JSON-based translation layer and a locale switcher in the
+header. Translations can be overridden per-app by publishing the lang files:
+
+```bash
+php artisan vendor:publish --tag=rocket-lang
+```
+
+Configure the panel with `->locale()` and `->availableLocales()` to enable the
+switcher. RTL scripts (e.g. Arabic) are handled automatically via Tailwind
+logical properties — the panel shell sets `dir` based on the active locale.
+
+### Sidebar
+
+The panel layout is built on shadcn's Sidebar primitives (`sidebar-08`
+pattern). `sheet.tsx`, `tooltip.tsx`, `sidebar.tsx`, and the `use-mobile`
+hook are vendored inside the package so host apps don't need to install them
+separately.
 
 ### Authorization
 
@@ -315,8 +343,11 @@ resources/js/
 
 ## Testing
 
+Clone the repository and run the package's test suite:
+
 ```bash
-cd vendor/maherelgamil/rocketphp
+git clone https://github.com/maherelgamil/rocketphp.git
+cd rocketphp
 composer install
 ./vendor/bin/pest
 ```
