@@ -9,3 +9,8 @@ package-lock.json
 .idea
 .vscode
 *.log
+/.agents
+/.claude
+/.mcp.json
+/skills
+/skills-lock.json
