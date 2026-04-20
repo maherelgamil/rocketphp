@@ -20,9 +20,10 @@ type SearchGroup = {
 type Props = {
     url: string;
     placeholder?: string;
+    __?: (key: string, replacements?: Record<string, string | number>) => string;
 };
 
-export default function GlobalSearchDialog({ url, placeholder = 'Search...' }: Props) {
+export default function GlobalSearchDialog({ url, placeholder = 'Search...', __ = (key) => key }: Props) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [groups, setGroups] = useState<SearchGroup[]>([]);
@@ -106,7 +107,7 @@ export default function GlobalSearchDialog({ url, placeholder = 'Search...' }: P
                         shouldFilter={false}
                     >
                         <div className="flex items-center border-b px-3">
-                            <Search className="mr-2 size-4 shrink-0 text-muted-foreground" />
+                            <Search className="me-2 size-4 shrink-0 text-muted-foreground" />
                             <Command.Input
                                 value={query}
                                 onValueChange={(v) => {
@@ -125,13 +126,13 @@ export default function GlobalSearchDialog({ url, placeholder = 'Search...' }: P
                         <Command.List className="max-h-[400px] overflow-y-auto p-2">
                             {!loading && query && groups.length === 0 && (
                                 <Command.Empty className="py-8 text-center text-sm text-muted-foreground">
-                                    No results found.
+                                    {__('No results found.')}
                                 </Command.Empty>
                             )}
 
                             {!query && !loading && (
                                 <div className="py-8 text-center text-sm text-muted-foreground">
-                                    Start typing to search…
+                                    {__('Start typing to search…')}
                                 </div>
                             )}
 

@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import PanelShell from '../components/panel-shell';
 import RecordForm from '../components/record-form';
+import { create__ } from '../lib/i18n';
 
 type Props = {
     panel: Parameters<typeof PanelShell>[0]['panel'];
@@ -12,13 +13,20 @@ type Props = {
 };
 
 export default function CreateRecord({ panel, resource, form, state, action, index_url }: Props) {
+    const __ = create__(panel.translations ?? {});
+
     return (
         <PanelShell panel={panel} activeSlug={resource.slug}>
-            <Head title={`Create ${resource.label}`} />
+            <Head title={__('Create :resource', { resource: resource.label })} />
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold tracking-tight">Create {resource.label}</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                    {__('Create :resource', { resource: resource.label })}
+                </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                    Add a new {resource.label.toLowerCase()} to {resource.pluralLabel.toLowerCase()}.
+                    {__('Add a new :resource to :resources.', {
+                        resource: resource.label.toLowerCase(),
+                        resources: resource.pluralLabel.toLowerCase(),
+                    })}
                 </p>
             </div>
             <RecordForm
@@ -26,7 +34,8 @@ export default function CreateRecord({ panel, resource, form, state, action, ind
                 state={state}
                 action={action}
                 indexUrl={index_url}
-                submitLabel="Create"
+                submitLabel={__('Create')}
+                __={__}
             />
         </PanelShell>
     );

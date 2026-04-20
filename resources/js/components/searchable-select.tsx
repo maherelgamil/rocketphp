@@ -1,5 +1,6 @@
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { Translator } from '../lib/i18n';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -15,6 +16,7 @@ type Props = {
     disabled?: boolean;
     nullable?: boolean;
     lookupUrl: string;
+    __?: Translator;
 };
 
 export function SearchableSelect({
@@ -25,6 +27,7 @@ export function SearchableSelect({
     disabled,
     nullable,
     lookupUrl,
+    __ = (key) => key,
 }: Props) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
@@ -76,7 +79,7 @@ export function SearchableSelect({
         return () => clearTimeout(handle);
     }, [open, query, lookupUrl]);
 
-    const triggerLabel = selectedLabel ?? placeholder ?? 'Select...';
+    const triggerLabel = selectedLabel ?? placeholder ?? __('Select...');
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -96,7 +99,7 @@ export function SearchableSelect({
                         {nullable && value && (
                             <X
                                 role="button"
-                                aria-label="Clear"
+                                aria-label={__('Clear')}
                                 className="size-4 opacity-60 hover:opacity-100"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -112,17 +115,17 @@ export function SearchableSelect({
                 <div className="border-b p-2">
                     <Input
                         autoFocus
-                        placeholder="Search..."
+                        placeholder={__('Search...')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                     />
                 </div>
                 <div className="max-h-64 overflow-y-auto p-1">
                     {loading && (
-                        <div className="p-2 text-xs text-muted-foreground">Searching…</div>
+                        <div className="p-2 text-xs text-muted-foreground">{__('Searching…')}</div>
                     )}
                     {!loading && results.length === 0 && (
-                        <div className="p-2 text-xs text-muted-foreground">No results.</div>
+                        <div className="p-2 text-xs text-muted-foreground">{__('No results.')}</div>
                     )}
                     {results.map((opt) => (
                         <button

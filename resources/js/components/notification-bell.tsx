@@ -27,6 +27,7 @@ type SharedNotifications = {
 
 type Props = {
     urls: NotificationUrls;
+    __?: (key: string, replacements?: Record<string, string | number>) => string;
 };
 
 function timeAgo(iso: string | null): string {
@@ -38,7 +39,7 @@ function timeAgo(iso: string | null): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export default function NotificationBell({ urls }: Props) {
+export default function NotificationBell({ urls, __ = (key) => key }: Props) {
     const { notifications: shared } = usePage<{ notifications: SharedNotifications }>().props;
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<Notification[]>([]);
@@ -92,10 +93,10 @@ export default function NotificationBell({ urls }: Props) {
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative size-9 p-0" aria-label="Notifications">
+                <Button variant="ghost" size="sm" className="relative size-9 p-0" aria-label={__('Notifications')}>
                     <Bell className="size-4" />
                     {unreadCount > 0 && (
-                        <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                        <span className="absolute -end-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                     )}
@@ -103,14 +104,14 @@ export default function NotificationBell({ urls }: Props) {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 p-0">
                 <div className="flex items-center justify-between border-b px-4 py-3">
-                    <span className="text-sm font-semibold">Notifications</span>
+                    <span className="text-sm font-semibold">{__('Notifications')}</span>
                     {unreadCount > 0 && (
                         <button
                             type="button"
                             onClick={markAllRead}
                             className="text-xs text-muted-foreground hover:text-foreground"
                         >
-                            Mark all read
+                            {__('Mark all read')}
                         </button>
                     )}
                 </div>
@@ -118,14 +119,14 @@ export default function NotificationBell({ urls }: Props) {
                 <div className="max-h-80 overflow-y-auto">
                     {loading && (
                         <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-                            Loading…
+                            {__('Loading…')}
                         </div>
                     )}
 
                     {!loading && items.length === 0 && (
                         <div className="flex flex-col items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
                             <Bell className="size-6 opacity-40" />
-                            <span>No unread notifications</span>
+                            <span>{__('No unread notifications')}</span>
                         </div>
                     )}
 
@@ -160,7 +161,7 @@ export default function NotificationBell({ urls }: Props) {
                                         type="button"
                                         onClick={() => markRead(item.id)}
                                         className="mt-1 shrink-0 text-xs text-muted-foreground hover:text-foreground"
-                                        aria-label="Mark as read"
+                                        aria-label={__('Mark as read')}
                                     >
                                         ✓
                                     </button>
@@ -175,7 +176,7 @@ export default function NotificationBell({ urls }: Props) {
                         className="text-xs text-muted-foreground hover:text-foreground"
                         onClick={() => setOpen(false)}
                     >
-                        View all notifications →
+                        {__('View all notifications →')}
                     </Link>
                 </div>
             </PopoverContent>

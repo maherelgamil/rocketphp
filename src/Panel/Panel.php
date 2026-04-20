@@ -53,6 +53,11 @@ final class Panel
     /** @var array<string, string> */
     private array $theme = [];
 
+    private ?string $locale = null;
+
+    /** @var array<int, string> */
+    private array $availableLocales = [];
+
     public function __construct(private readonly string $id)
     {
         $this->brand = (string) config('rocket.brand.name', 'Rocket');
@@ -429,6 +434,55 @@ final class Panel
         return $this->theme;
     }
 
+    public function locale(string $locale): self
+    {
+        $this->locale = $locale;
+
+        return $this;
+    }
+
+    public function getLocale(): string
+    {
+        return $this->locale ?? app()->getLocale();
+    }
+
+    public function availableLocales(array $locales): self
+    {
+        $this->availableLocales = $locales;
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getAvailableLocales(): array
+    {
+        return $this->availableLocales;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function loadTranslations(): array
+    {
+        $locale = $this->getLocale();
+
+        // 1. Check published host-app overrides first
+        $publishedPath = lang_path('vendor/rocket/'.$locale.'.json');
+        if (file_exists($publishedPath)) {
+            return json_decode(file_get_contents($publishedPath), true) ?? [];
+        }
+
+        // 2. Fall back to package-bundled file
+        $packagePath = __DIR__.'/../../lang/'.$locale.'.json';
+        if (file_exists($packagePath)) {
+            return json_decode(file_get_contents($packagePath), true) ?? [];
+        }
+
+        return [];
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -456,6 +510,9 @@ final class Panel
                     'mark_all_read' => $this->url('notifications/read-all'),
                 ] : [],
             ],
+            'locale' => $this->getLocale(),
+            'available_locales' => $this->getAvailableLocales(),
+            'translations' => $this->loadTranslations(),
         ];
     }
 

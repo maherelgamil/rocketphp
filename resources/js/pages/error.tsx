@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ShieldOff, FileQuestion, AlertCircle } from 'lucide-react';
 import PanelShell from '../components/panel-shell';
 import { Button } from '../components/ui/button';
+import { create__ } from '../lib/i18n';
 
 type PanelProp = {
     id: string;
@@ -14,6 +15,7 @@ type PanelProp = {
         sort?: number;
         icon?: string | null;
     }[];
+    translations?: Record<string, string>;
 };
 
 type Props = {
@@ -30,6 +32,7 @@ function iconFor(status: number) {
 }
 
 export default function ErrorPage({ panel, status, title, message }: Props) {
+    const __ = create__(panel.translations ?? {});
     const Icon = iconFor(status);
 
     return (
@@ -43,7 +46,7 @@ export default function ErrorPage({ panel, status, title, message }: Props) {
                 <p className="mt-2 max-w-md text-sm text-muted-foreground">{message}</p>
                 <div className="mt-6 flex items-center gap-2">
                     <Button variant="ghost" asChild>
-                        <Link href={`/${panel.path}`}>Back to dashboard</Link>
+                        <Link href={`/${panel.path}`}>{__('Back to dashboard')}</Link>
                     </Button>
                 </div>
             </div>

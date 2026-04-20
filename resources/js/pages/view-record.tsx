@@ -4,6 +4,7 @@ import PanelShell from '../components/panel-shell';
 import type { FieldSchema } from '../components/form-field';
 import RelationManagers from '../components/relation-managers';
 import { colSpanClass, gridClass } from '../lib/grid';
+import { create__ } from '../lib/i18n';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -41,6 +42,7 @@ type PanelProp = {
         sort?: number;
         icon?: string | null;
     }[];
+    translations?: Record<string, string>;
 };
 
 type Props = {
@@ -155,6 +157,8 @@ export default function ViewRecord({
     relation_managers_layout = 'tabs',
     query = {},
 }: Props) {
+    const __ = create__(panel.translations ?? {});
+
     const renderField = (field: FieldSchema) => (
         <div key={field.name} className={colSpanClass(field.column_span ?? 1)}>
             <FieldView field={field} value={state[field.name]} />
@@ -169,17 +173,19 @@ export default function ViewRecord({
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">View {resource.label}</h1>
+                        <h1 className="text-2xl font-semibold">
+                            {__('View :resource', { resource: resource.label })}
+                        </h1>
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" asChild>
-                            <Link href={index_url}>Back</Link>
+                            <Link href={index_url}>{__('Back')}</Link>
                         </Button>
                         {edit_url && (
                             <Button asChild>
                                 <Link href={edit_url}>
-                                    <Pencil className="mr-2 size-4" />
-                                    Edit
+                                    <Pencil className="me-2 size-4" />
+                                    {__('Edit')}
                                 </Link>
                             </Button>
                         )}

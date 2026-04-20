@@ -72,6 +72,17 @@ class HandleRocketRequests extends Middleware
     {
         $panelId = $request->route()?->defaults['panelId'] ?? null;
 
+        // Apply session-based locale if available
+        if ($panelId && $this->panels->has($panelId)) {
+            $panel = $this->panels->get($panelId);
+            $sessionKey = 'rocket_locale_'.$panelId;
+            $savedLocale = session($sessionKey);
+
+            if ($savedLocale && in_array($savedLocale, $panel->getAvailableLocales(), true)) {
+                app()->setLocale($savedLocale);
+            }
+        }
+
         return array_merge(parent::share($request), [
             'rocket' => [
                 'panel' => fn () => $panelId && $this->panels->has($panelId)

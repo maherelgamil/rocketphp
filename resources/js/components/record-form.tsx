@@ -2,6 +2,7 @@ import { Link, useForm } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { colSpanClass, gridClass } from '../lib/grid';
+import type { Translator } from '../lib/i18n';
 import { cn } from '../lib/utils';
 import FormField, { type FieldSchema } from './form-field';
 import { Button } from './ui/button';
@@ -40,6 +41,7 @@ type Props = {
     action: Action;
     indexUrl: string;
     submitLabel: string;
+    __?: Translator;
 };
 
 function gridClassFor(columns: number): string {
@@ -58,7 +60,7 @@ function slugify(label: string): string {
     return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-export default function RecordForm({ form, state, action, indexUrl, submitLabel }: Props) {
+export default function RecordForm({ form, state, action, indexUrl, submitLabel, __ = (key) => key }: Props) {
     const inertia = useForm<Record<string, unknown>>(state);
 
     const submit = (e: React.FormEvent) => {
@@ -74,6 +76,7 @@ export default function RecordForm({ form, state, action, indexUrl, submitLabel 
                 value={inertia.data[field.name]}
                 error={inertia.errors[field.name as keyof typeof inertia.errors] as string | undefined}
                 onChange={(v) => inertia.setData(field.name, v)}
+                __={__}
             />
         </div>
     );
@@ -81,7 +84,7 @@ export default function RecordForm({ form, state, action, indexUrl, submitLabel 
     const hasLayout = form.fields.some((n) => isSection(n) || isTabs(n));
 
     const renderSection = (section: SectionSchema, key: string) => (
-        <FormSection key={key} section={section}>
+        <FormSection key={key} section={section} __={__}>
             <div className={gridClassFor(section.columns)}>{section.fields.map(renderField)}</div>
         </FormSection>
     );
@@ -119,10 +122,10 @@ export default function RecordForm({ form, state, action, indexUrl, submitLabel 
 
             <div className="flex items-center justify-end gap-2">
                 <Button type="button" variant="ghost" asChild>
-                    <Link href={indexUrl}>Cancel</Link>
+                    <Link href={indexUrl}>{__('Cancel')}</Link>
                 </Button>
                 <Button type="submit" disabled={inertia.processing}>
-                    {inertia.processing ? 'Saving...' : submitLabel}
+                    {inertia.processing ? __('Saving...') : submitLabel}
                 </Button>
             </div>
         </form>
@@ -206,9 +209,11 @@ function FormTabs({
 function FormSection({
     section,
     children,
+    __,
 }: {
     section: SectionSchema;
     children: React.ReactNode;
+    __: Translator;
 }) {
     const [open, setOpen] = useState(!section.collapsed);
     const canToggle = section.collapsible;
@@ -229,7 +234,7 @@ function FormSection({
                         size="sm"
                         className="size-8 p-0"
                         onClick={() => setOpen((v) => !v)}
-                        aria-label={open ? 'Collapse' : 'Expand'}
+                        aria-label={open ? __('Collapse') : __('Expand')}
                     >
                         <ChevronDown
                             className={cn('size-4 transition-transform', !open && '-rotate-90')}

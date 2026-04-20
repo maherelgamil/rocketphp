@@ -100,7 +100,7 @@ export function DateRangePicker({ from, until, onChange, label, className }: Dat
                             !range && 'text-muted-foreground',
                         )}
                     >
-                        <CalendarIcon className="mr-2 size-4" />
+                        <CalendarIcon className="me-2 size-4" />
                         {formatRange(range)}
                     </Button>
                 </PopoverTrigger>

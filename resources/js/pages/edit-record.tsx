@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import PanelShell from '../components/panel-shell';
 import RecordForm from '../components/record-form';
 import RelationManagers from '../components/relation-managers';
+import { create__ } from '../lib/i18n';
 
 type Props = {
     panel: Parameters<typeof PanelShell>[0]['panel'];
@@ -26,18 +27,23 @@ export default function EditRecord({
     relation_managers_layout = 'tabs',
     query = {},
 }: Props) {
+    const __ = create__(panel.translations ?? {});
+
     return (
         <PanelShell panel={panel} activeSlug={resource.slug}>
-            <Head title={`Edit ${resource.label}`} />
+            <Head title={__('Edit :resource', { resource: resource.label })} />
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold tracking-tight">Edit {resource.label}</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                    {__('Edit :resource', { resource: resource.label })}
+                </h1>
             </div>
             <RecordForm
                 form={form}
                 state={state}
                 action={action}
                 indexUrl={index_url}
-                submitLabel="Save changes"
+                submitLabel={__('Save changes')}
+                __={__}
             />
             <RelationManagers
                 managers={relation_managers}

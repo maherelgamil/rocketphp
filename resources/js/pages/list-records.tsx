@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import DataTable from '../components/data-table';
 import PanelShell from '../components/panel-shell';
 import { Button } from '../components/ui/button';
+import { create__ } from '../lib/i18n';
 
 type RowActionSchema = {
     name: string;
@@ -50,6 +51,7 @@ export default function ListRecords({
     table_filters = [],
     per_page_options = [10, 25, 50, 100],
 }: Props) {
+    const __ = create__(panel.translations ?? {});
     const baseUrl = `/${panel.path}/${resource.slug}`;
     const canCreate = resource.can?.create === true;
 
@@ -60,14 +62,14 @@ export default function ListRecords({
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">{resource.pluralLabel}</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Manage your {resource.pluralLabel.toLowerCase()} records.
+                        {__('Manage your :resource records.', { resource: resource.pluralLabel.toLowerCase() })}
                     </p>
                 </div>
                 {resource.hasForm && canCreate && (
                     <Button asChild>
                         <Link href={`${baseUrl}/create`}>
-                            <Plus className="mr-2 size-4" />
-                            New {resource.label}
+                            <Plus className="me-2 size-4" />
+                            {__('New :resource', { resource: resource.label })}
                         </Link>
                     </Button>
                 )}

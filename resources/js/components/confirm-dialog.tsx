@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Translator } from '../lib/i18n';
 import { Button } from './ui/button';
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
     onConfirm: () => void;
     onCancel: () => void;
     children?: ReactNode;
+    __?: Translator;
 };
 
 export default function ConfirmDialog({
@@ -20,6 +22,7 @@ export default function ConfirmDialog({
     destructive = false,
     onConfirm,
     onCancel,
+    __ = (key) => key,
 }: Props) {
     if (!open) {
         return null;
@@ -48,7 +51,7 @@ export default function ConfirmDialog({
                 </p>
                 <div className="mt-6 flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
+                        {__('Cancel')}
                     </Button>
                     <Button
                         type="button"

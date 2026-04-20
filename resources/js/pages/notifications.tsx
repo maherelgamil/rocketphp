@@ -4,6 +4,7 @@ import PanelShell from '../components/panel-shell';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { create__ } from '../lib/i18n';
 
 type Notification = {
     id: string;
@@ -52,20 +53,21 @@ function markAllRead(markAllUrl: string) {
 }
 
 export default function Notifications({ panel, notifications, pagination }: Props) {
+    const __ = create__(panel.translations ?? {});
     const markAllUrl = panel.notifications?.urls.mark_all_read;
 
     return (
         <PanelShell panel={panel} activeSlug="__notifications__">
-            <Head title="Notifications" />
+            <Head title={__('Notifications')} />
 
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight">{__('Notifications')}</h1>
                     <p className="text-sm text-muted-foreground">{pagination.total} total</p>
                 </div>
                 {markAllUrl && (
                     <Button variant="outline" size="sm" onClick={() => markAllRead(markAllUrl)}>
-                        Mark all read
+                        {__('Mark all read')}
                     </Button>
                 )}
             </div>
@@ -74,7 +76,7 @@ export default function Notifications({ panel, notifications, pagination }: Prop
                 {notifications.data.length === 0 && (
                     <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
                         <Bell className="size-8 opacity-40" />
-                        <span className="text-sm">No notifications yet</span>
+                        <span className="text-sm">{__('No notifications yet')}</span>
                     </div>
                 )}
 
@@ -97,10 +99,10 @@ export default function Notifications({ panel, notifications, pagination }: Prop
                         <div className="shrink-0">
                             {n.read_at ? (
                                 <Badge variant="secondary" className="text-xs">
-                                    Read
+                                    {__('Read')}
                                 </Badge>
                             ) : (
-                                <Badge className="text-xs">New</Badge>
+                                <Badge className="text-xs">{__('New')}</Badge>
                             )}
                         </div>
                     </div>

@@ -3,7 +3,9 @@ import { Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import React, { useEffect, useState, type ReactNode } from 'react';
 import { useFlashToast } from '../hooks/use-flash-toast';
 import { cn } from '../lib/utils';
+import { create__ } from '../lib/i18n';
 import GlobalSearchDialog from './global-search-dialog';
+import LocaleSwitcher from './locale-switcher';
 import NavIcon from './nav-icon';
 import NotificationBell from './notification-bell';
 import { Button } from './ui/button';
@@ -51,7 +53,12 @@ type PanelProps = {
     dashboard_columns: number;
     sidebar_collapsed?: boolean;
     sidebar_collapsible?: boolean;
+    locale: string;
+    available_locales: string[];
+    translations: Record<string, string>;
 };
+
+const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'];
 
 type Props = {
     panel: PanelProps;
@@ -80,6 +87,9 @@ function buildThemeVars(theme: PanelTheme | undefined): React.CSSProperties {
 
 export default function PanelShell({ panel, activeSlug, children }: Props) {
     useFlashToast();
+
+    const __ = create__(panel.translations);
+    const dir = RTL_LOCALES.includes(panel.locale) ? 'rtl' : 'ltr';
 
     const [collapsed, setCollapsed] = useState(panel.sidebar_collapsed ?? false);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -145,7 +155,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                                                 : 'text-muted-foreground',
                                         )}
                                     >
-                                        <NavIcon name={item.icon} className={compact ? '' : 'mr-2'} />
+                                        <NavIcon name={item.icon} className={compact ? '' : 'me-2'} />
                                         {!compact && <span>{item.label}</span>}
                                     </Link>
                                 </li>
@@ -158,10 +168,10 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
     );
 
     return (
-        <div className="flex min-h-screen bg-muted/30" style={buildThemeVars(panel.theme)}>
+        <div className="flex min-h-screen bg-muted/30" dir={dir} style={buildThemeVars(panel.theme)}>
             <aside
                 className={cn(
-                    'relative hidden shrink-0 flex-col border-r bg-card transition-[width] duration-200 md:flex',
+                    'relative hidden shrink-0 flex-col border-e bg-card transition-[width] duration-200 md:flex',
                     collapsed ? 'w-16' : 'w-64',
                 )}
             >
@@ -170,8 +180,8 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                     <button
                         type="button"
                         onClick={() => setCollapsed((v) => !v)}
-                        className="absolute -right-3 top-20 hidden size-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:text-foreground md:flex"
-                        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        className="absolute -end-3 top-20 hidden size-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:text-foreground md:flex"
+                        aria-label={collapsed ? __('Expand sidebar') : __('Collapse sidebar')}
                     >
                         {collapsed ? (
                             <PanelLeftOpen className="size-3.5" />
@@ -191,8 +201,8 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
             )}
             <aside
                 className={cn(
-                    'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-card transition-transform duration-200 md:hidden',
-                    mobileOpen ? 'translate-x-0' : '-translate-x-full',
+                    'fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e bg-card transition-transform duration-200 md:hidden',
+                    mobileOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full',
                 )}
             >
                 <div className="flex items-center justify-between border-b px-6 py-4">
@@ -203,7 +213,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                         size="sm"
                         className="size-8 p-0"
                         onClick={() => setMobileOpen(false)}
-                        aria-label="Close menu"
+                        aria-label={__('Close menu')}
                     >
                         <X className="size-4" />
                     </Button>
@@ -229,7 +239,7 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                                                     : 'text-muted-foreground',
                                             )}
                                         >
-                                            <NavIcon name={item.icon} className="mr-2" />
+                                            <NavIcon name={item.icon} className="me-2" />
                                             <span>{item.label}</span>
                                         </Link>
                                     </li>
@@ -249,11 +259,11 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                             size="sm"
                             className="size-9 p-0"
                             onClick={() => setMobileOpen(true)}
-                            aria-label="Open menu"
+                            aria-label={__('Open menu')}
                         >
                             <Menu className="size-5" />
                         </Button>
-                        <span className="ml-2 text-base font-semibold tracking-tight">
+                        <span className="ms-2 text-base font-semibold tracking-tight">
                             {panel.brand}
                         </span>
                     </div>
@@ -263,10 +273,18 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                             <GlobalSearchDialog
                                 url={panel.global_search.url}
                                 placeholder={panel.global_search.placeholder}
+                                __={__}
+                            />
+                        )}
+                        {panel.available_locales.length > 1 && (
+                            <LocaleSwitcher
+                                locale={panel.locale}
+                                availableLocales={panel.available_locales}
+                                switchUrl={`/${panel.path.replace(/^\/+|\/+$/g, '')}/locale`}
                             />
                         )}
                         {panel.notifications?.enabled && panel.notifications.urls.index && (
-                            <NotificationBell urls={panel.notifications.urls} />
+                            <NotificationBell urls={panel.notifications.urls} __={__} />
                         )}
                     </div>
                 </div>

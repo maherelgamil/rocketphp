@@ -1,3 +1,4 @@
+import type { Translator } from '../lib/i18n';
 import NavIcon from './nav-icon';
 
 type FeedItem = {
@@ -8,6 +9,7 @@ type FeedItem = {
 
 type Props = {
     items: FeedItem[];
+    __?: Translator;
 };
 
 function timeAgo(iso: string | null): string {
@@ -21,10 +23,10 @@ function timeAgo(iso: string | null): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export default function ActivityFeedWidget({ items }: Props) {
+export default function ActivityFeedWidget({ items, __ = (key) => key }: Props) {
     if (items.length === 0) {
         return (
-            <p className="py-6 text-center text-sm text-muted-foreground">No recent activity</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{__('No recent activity')}</p>
         );
     }
 

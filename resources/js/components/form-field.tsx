@@ -1,3 +1,4 @@
+import type { Translator } from '../lib/i18n';
 import { SearchableSelect } from './searchable-select';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -29,9 +30,10 @@ type Props = {
     value: unknown;
     error?: string;
     onChange: (value: unknown) => void;
+    __?: Translator;
 };
 
-export default function FormField({ field, value, error, onChange }: Props) {
+export default function FormField({ field, value, error, onChange, __ = (key) => key }: Props) {
     return (
         <div className="space-y-2">
             <Label htmlFor={field.name}>
@@ -39,7 +41,7 @@ export default function FormField({ field, value, error, onChange }: Props) {
                 {field.required && <span className="text-destructive">*</span>}
             </Label>
 
-            {renderControl(field, value, onChange)}
+            {renderControl(field, value, onChange, __)}
 
             {field.helper_text && !error && (
                 <p className="text-xs text-muted-foreground">{field.helper_text}</p>
@@ -53,6 +55,7 @@ function renderControl(
     field: FieldSchema,
     value: unknown,
     onChange: (value: unknown) => void,
+    __: Translator,
 ) {
     switch (field.type) {
         case 'textarea': {
@@ -82,6 +85,7 @@ function renderControl(
                         disabled={field.disabled}
                         nullable={!field.required}
                         lookupUrl={lookupUrl}
+                        __={__}
                     />
                 );
             }
@@ -93,7 +97,7 @@ function renderControl(
                     disabled={field.disabled}
                 >
                     <SelectTrigger id={field.name}>
-                        <SelectValue placeholder={field.placeholder ?? 'Select...'} />
+                        <SelectValue placeholder={field.placeholder ?? __('Select...')} />
                     </SelectTrigger>
                     <SelectContent>
                         {Object.entries(options).map(([key, label]) => (
@@ -193,9 +197,9 @@ function renderControl(
                           value: String((r as Pair).value ?? ''),
                       }))
                 : [];
-            const keyLabel = (field.extra.key_label as string | undefined) ?? 'Key';
-            const valueLabel = (field.extra.value_label as string | undefined) ?? 'Value';
-            const addLabel = (field.extra.add_button_label as string | undefined) ?? 'Add row';
+            const keyLabel = (field.extra.key_label as string | undefined) ?? __('Key');
+            const valueLabel = (field.extra.value_label as string | undefined) ?? __('Value');
+            const addLabel = (field.extra.add_button_label as string | undefined) ?? __('Add row');
 
             const update = (next: Pair[]) => onChange(next);
             const updateAt = (idx: number, patch: Partial<Pair>) => {
@@ -208,7 +212,7 @@ function renderControl(
             return (
                 <div className="space-y-2 rounded-md border border-input p-3">
                     {pairs.length === 0 && (
-                        <p className="text-xs text-muted-foreground">No entries.</p>
+                        <p className="text-xs text-muted-foreground">{__('No entries.')}</p>
                     )}
                     {pairs.length > 0 && (
                         <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground">
@@ -236,7 +240,7 @@ function renderControl(
                                 onClick={() => remove(idx)}
                                 disabled={field.disabled}
                                 className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                aria-label="Remove row"
+                                aria-label={__('Remove row')}
                             >
                                 ×
                             </button>

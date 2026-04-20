@@ -156,6 +156,7 @@ type Props = {
     perPageOptions?: number[];
     /** If set, prefixes the 5 core query keys (page, search, sort, direction, per_page) when navigating. */
     paramPrefix?: string;
+    __?: (key: string, replacements?: Record<string, string | number>) => string;
 };
 
 function qString(val: unknown): string {
@@ -178,6 +179,7 @@ export default function DataTable({
     tableFilters = [],
     perPageOptions = [10, 25, 50, 100],
     paramPrefix = '',
+    __ = (key) => key,
 }: Props) {
     const prefixKey = (k: string) => (paramPrefix ? paramPrefix + k : k);
     const coreKeys = new Set(['page', 'search', 'sort', 'direction', 'per_page']);
@@ -212,12 +214,12 @@ export default function DataTable({
     const sortIcon = (column: Column) => {
         if (!column.sortable) return null;
         if (filters.sort !== column.name) {
-            return <ArrowUpDown className="ml-2 size-3.5 opacity-40" />;
+            return <ArrowUpDown className="ms-2 size-3.5 opacity-40" />;
         }
         return filters.direction === 'asc' ? (
-            <ArrowUp className="ml-2 size-3.5" />
+            <ArrowUp className="ms-2 size-3.5" />
         ) : (
-            <ArrowDown className="ml-2 size-3.5" />
+            <ArrowDown className="ms-2 size-3.5" />
         );
     };
 
@@ -284,10 +286,10 @@ export default function DataTable({
                                         }
                                     >
                                         <SelectTrigger className="h-9 w-[180px]">
-                                            <SelectValue placeholder="All" />
+                                            <SelectValue placeholder={__('All')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="__all__">All</SelectItem>
+                                            <SelectItem value="__all__">{__('All')}</SelectItem>
                                             {Object.entries(f.options).map(([k, label]) => (
                                                 <SelectItem key={k} value={k}>
                                                     {label}
@@ -312,9 +314,9 @@ export default function DataTable({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all">All</SelectItem>
-                                            <SelectItem value="yes">Yes</SelectItem>
-                                            <SelectItem value="no">No</SelectItem>
+                                            <SelectItem value="all">{__('All')}</SelectItem>
+                                            <SelectItem value="yes">{__('Yes')}</SelectItem>
+                                            <SelectItem value="no">{__('No')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -372,23 +374,23 @@ export default function DataTable({
                         className="flex max-w-sm flex-1 items-center gap-2"
                     >
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="Search..."
+                                placeholder={__('Search...')}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="pl-9"
+                                className="ps-9"
                             />
                         </div>
                         <Button type="submit" size="sm" variant="secondary">
-                            Search
+                            {__('Search')}
                         </Button>
                     </form>
                 )}
 
                 <div className="ml-auto flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Per page</span>
+                    <span className="text-xs text-muted-foreground">{__('Per page')}</span>
                     <Select
                         value={String(filters.per_page)}
                         onValueChange={(v) => navigate({ per_page: Number(v) })}
@@ -435,7 +437,7 @@ export default function DataTable({
                                         type="checkbox"
                                         checked={allSelected}
                                         onChange={toggleAll}
-                                        aria-label="Select all"
+                                        aria-label={__('Select all')}
                                         className="size-4 rounded border"
                                     />
                                 </TableHead>
@@ -453,7 +455,7 @@ export default function DataTable({
                                 </TableHead>
                             ))}
                             {(editable || rowActions.length > 0) && (
-                                <TableHead className="w-24 text-right">Actions</TableHead>
+                                <TableHead className="w-24 text-end">{__('Actions')}</TableHead>
                             )}
                         </TableRow>
                     </TableHeader>
@@ -464,7 +466,7 @@ export default function DataTable({
                                     colSpan={totalColumns}
                                     className="h-24 text-center text-muted-foreground"
                                 >
-                                    No records found.
+                                    {__('No records found.')}
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -476,18 +478,18 @@ export default function DataTable({
                                                 type="checkbox"
                                                 checked={selected.has(String(row._key))}
                                                 onChange={() => toggleRow(String(row._key))}
-                                                aria-label="Select row"
+                                                aria-label={__('Select row')}
                                                 className="size-4 rounded border"
                                             />
                                         </TableCell>
                                     )}
                                     {schema.columns.map((col) => (
                                         <TableCell key={col.name}>
-                                            {renderCell(col, row[col.name])}
+                                            {renderCell(col, row[col.name], __)}
                                         </TableCell>
                                     ))}
                                     {(editable || rowActions.length > 0) && (
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-end">
                                             <div className="flex justify-end gap-1">
                                                 {editable &&
                                                     Boolean(row._can_update) &&
@@ -500,7 +502,7 @@ export default function DataTable({
                                                         >
                                                             <Link
                                                                 href={`${baseUrl}/${String(row._key)}/edit`}
-                                                                aria-label="Edit"
+                                                                aria-label={__('Edit')}
                                                             >
                                                                 <Pencil className="size-4" />
                                                             </Link>
@@ -532,7 +534,7 @@ export default function DataTable({
                                                                             size="sm"
                                                                             variant="ghost"
                                                                             className="size-8 p-0"
-                                                                            aria-label="More actions"
+                                                                            aria-label={__('More actions')}
                                                                         >
                                                                             <MoreHorizontal className="size-4" />
                                                                         </Button>
@@ -568,7 +570,7 @@ export default function DataTable({
                             disabled={pagination.current_page <= 1}
                             onClick={() => navigate({ page: pagination.current_page - 1 })}
                         >
-                            Previous
+                            {__('Previous')}
                         </Button>
                         <Button
                             type="button"
@@ -577,7 +579,7 @@ export default function DataTable({
                             disabled={pagination.current_page >= pagination.last_page}
                             onClick={() => navigate({ page: pagination.current_page + 1 })}
                         >
-                            Next
+                            {__('Next')}
                         </Button>
                     </div>
                 </div>
@@ -585,13 +587,13 @@ export default function DataTable({
 
             <ConfirmDialog
                 open={confirmAction !== null}
-                title={confirmAction?.action.label ?? 'Confirm'}
+                title={confirmAction?.action.label ?? __('Confirm')}
                 description={
                     confirmAction?.kind === 'bulk'
-                        ? `Delete ${selected.size} selected record(s)? This cannot be undone.`
-                        : 'Delete this record? This cannot be undone.'
+                        ? __('Delete :count selected record(s)? This cannot be undone.', { count: selected.size })
+                        : __('Delete this record? This cannot be undone.')
                 }
-                confirmLabel={confirmAction?.action.label ?? 'Confirm'}
+                confirmLabel={confirmAction?.action.label ?? __('Confirm')}
                 destructive={confirmAction?.action.destructive ?? true}
                 onCancel={() => setConfirmAction(null)}
                 onConfirm={() => {
@@ -608,7 +610,7 @@ export default function DataTable({
     );
 }
 
-function renderCell(col: Column, value: unknown) {
+function renderCell(col: Column, value: unknown, __: (key: string) => string = (key) => key) {
     if (value === null || value === undefined) {
         return <span className="text-muted-foreground">—</span>;
     }
@@ -620,7 +622,7 @@ function renderCell(col: Column, value: unknown) {
             badgeColorClasses[token]?.match(/text-\S+/)?.[0] ?? 'text-muted-foreground';
         const iconName = String(truthy ? col.extra.true_icon : col.extra.false_icon);
         const Icon = iconName === 'x' ? X : Check;
-        return <Icon className={`size-4 ${colorClass}`} aria-label={truthy ? 'Yes' : 'No'} />;
+        return <Icon className={`size-4 ${colorClass}`} aria-label={truthy ? __('Yes') : __('No')} />;
     }
 
     if (col.type === 'icon') {
