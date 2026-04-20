@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MaherElGamil\Rocket\Dashboard;
 
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use MaherElGamil\Rocket\Dashboard\Concerns\CanRenderOnPages;
 use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
@@ -16,7 +18,7 @@ final class ChartWidget
 
     private string $interval = 'day';
 
-    private ?Closure $queryCallback = null;
+    private ?\Closure $queryCallback = null;
 
     private string $dateColumn = 'created_at';
 
@@ -47,7 +49,7 @@ final class ChartWidget
         return $this;
     }
 
-    public function data(Closure $callback): self
+    public function data(\Closure $callback): self
     {
         $this->queryCallback = $callback;
 
@@ -68,9 +70,9 @@ final class ChartWidget
         return $this;
     }
 
-    public function color(string|Color $color): self
+    public function color(\MaherElGamil\Rocket\Support\Color|string $color): self
     {
-        $this->color = $color instanceof Color ? $color->hex() : $color;
+        $this->color = $color instanceof \MaherElGamil\Rocket\Support\Color ? $color->hex() : $color;
 
         return $this;
     }
