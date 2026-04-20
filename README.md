@@ -2,10 +2,6 @@
 
 A **Server-Driven UI (SDUI)** framework for Laravel + Inertia.js + React + shadcn/ui.
 
-## What is SDUI?
-
-**Server-Driven UI** is an architectural pattern where the server controls the UI structure — not just data, but *what components to render, their layout, and behavior*. Instead of the client querying APIs and building UI, the server sends a complete UI schema (JSON) that the client renders deterministically.
-
 ```
 ┌───────────┐    UI Schema (JSON)     ┌───────────┐
 │  Laravel  │ ──────────────────────► │   React   │
@@ -13,14 +9,12 @@ A **Server-Driven UI (SDUI)** framework for Laravel + Inertia.js + React + shadc
 └───────────┘                         └───────────┘
 ```
 
-RocketPHP sends widget definitions, table schemas, form configurations, and page blocks from PHP. The React layer is *stateless* — it simply renders what it receives.
+RocketPHP sends widget definitions, table schemas, form configurations, and
+page blocks from PHP. The React layer is *stateless* — it renders whatever it
+receives. One source of truth, no duplicated validation, no client-side
+API surface to design.
 
-### Why SDUI?
-
-- **Single source of truth** — UI logic lives in PHP, not duplicated across frontend
-- **Rapid iteration** — change a definition, instantly reflected everywhere
-- **No client-side API bloat** — no fetching, no state management, no custom UI code
-- **Consistency** — every rendered table/form follows the exact same patterns
+**[→ Read the docs](docs/README.md)**
 
 ## Requirements
 
@@ -31,81 +25,19 @@ RocketPHP sends widget definitions, table schemas, form configurations, and page
 - React 19 + `@inertiajs/react`
 - shadcn/ui components
 
-## Installation
+## Install
 
 ```bash
 composer require maherelgamil/rocketphp
 ```
 
-Register the service provider (auto-discovered) and add Rocket's source to your Tailwind `app.css`:
+Then wire up Tailwind and Vite — see the
+[Installation guide](docs/getting-started/installation.md).
 
-```css
-@import 'tailwindcss';
-@source '../../vendor/maherelgamil/rocketphp/resources/js';
-```
-
-Add the Rocket entry to your `vite.config.ts`:
-
-```ts
-import path from 'node:path';
-
-laravel({
-    input: [
-        'resources/css/app.css',
-        'resources/js/app.tsx',
-        'vendor/maherelgamil/rocketphp/resources/js/rocket.tsx',
-    ],
-}),
-// ...
-resolve: {
-    alias: {
-        '@rocket': path.resolve(__dirname, 'vendor/maherelgamil/rocketphp/resources/js'),
-    },
-},
-```
-
-## Quick start
-
-### 1. Create a panel
+## Quick look
 
 ```bash
 php artisan rocket:make-panel Admin
-```
-
-This generates `app/Providers/Rocket/AdminPanelProvider.php`:
-
-```php
-use MaherElGamil\Rocket\Panel\Panel;
-use MaherElGamil\Rocket\Panel\PanelProvider;
-
-final class AdminPanelProvider extends PanelProvider
-{
-    public function panel(Panel $panel): Panel
-    {
-        return $panel
-            ->default()
-            ->path('admin')
-            ->brand('My App')
-            ->discoverResources(
-                in: app_path('Rocket/Resources'),
-                for: 'App\\Rocket\\Resources',
-            );
-    }
-}
-```
-
-Register it in `bootstrap/providers.php`:
-
-```php
-return [
-    // ...
-    App\Providers\Rocket\AdminPanelProvider::class,
-];
-```
-
-### 2. Create a resource
-
-```bash
 php artisan rocket:make-resource User
 ```
 
@@ -127,223 +59,48 @@ final class UserResource extends Resource
                 TextColumn::make('name')->sortable(),
                 TextColumn::make('email')->sortable()->copyable(),
             ])
-            ->searchable(['name', 'email'])
-            ->defaultSort('id', 'desc');
+            ->searchable(['name', 'email']);
     }
 }
 ```
 
-Visit `/admin/users` — you'll get a sortable, searchable, paginated table.
-
-Define `form()` on the resource to enable create/edit and the **New** button:
-
-```php
-use MaherElGamil\Rocket\Forms\Components\TextInput;
-use MaherElGamil\Rocket\Forms\Form;
-
-public static function form(Form $form): Form
-{
-    return $form->schema([
-        TextInput::make('name')->required(),
-        TextInput::make('email')->email()->required()->unique(),
-    ]);
-}
-```
+Visit `/admin/users` — you get a sortable, searchable, paginated table,
+policy-gated and ready to extend. Add a `form()` to unlock create/edit.
+Full walkthrough: [Quick Start](docs/getting-started/quick-start.md).
 
 ## Features
 
-### Panel Configuration
+- **Resources** — auto-generated list, create, edit, view pages
+- **Tables** — columns, filters, row + bulk actions, pagination, search
+- **Forms** — 15 field types, layout grouping, server-side validation
+- **Widgets** — stats, charts, tables, recent records, activity feeds
+- **Relation managers** — manage related records inline on edit/view
+- **Custom pages** — drop a class in `Pages/`, it's auto-discovered
+- **Authorization** — policy-gated at every level (nav, page, action)
+- **Global search** — `Cmd+K` across resources
+- **Notifications** — bell in the header, backed by `Notification::send()`
+- **i18n + RTL** — locale switcher, JSON translations, automatic RTL
 
-```php
-$panel
-    ->path('admin')
-    ->brand('My App')
-    ->domain('admin.example.com')           // Optional domain
-    ->middleware(['web', 'auth'])           // Route middleware
-    ->authMiddleware(['auth', 'verified'])  // Authenticated middleware
-    ->guard('web')                          // Auth guard
-    ->dashboardColumns(4)                  // Grid columns (1-6)
-    ->globalSearchEnabled(true)
-    ->globalSearchPlaceholder('Search...')
-    ->notificationsEnabled(true)
-    ->sidebarCollapsible(false)            // Disable collapse toggle
-    ->sidebarCollapsed(true)                // Start collapsed (needs collapsible)
-    ->setPrimaryColor('#3b82f6')
-    ->setAccentColor('#8b5cf6')
-    ->setFont('Inter')
-    ->setRadius('0.5rem')
-    ->setDensity('default')                // default | compact | extra-compact
-    ->locale('en')                         // Default locale
-    ->availableLocales(['en', 'ar']);     // Locales shown in the switcher
-```
+Full reference in [docs/](docs/README.md).
 
-### Resources
+## Docs
 
-- **Model binding** — Automatic Eloquent model binding
-- **Slug customization** — Custom URL slugs
-- **Navigation** — Icon, group, and sort order
-- **CRUD pages** — List, Create, Edit, View pages auto-generated
-- **Custom pages** — Discover custom pages in `app/Rocket/Resources/{Resource}/Pages/`
-- **Relation managers** — Manage related records (HasMany, BelongsToMany, etc.)
-- **Global search** — Search across resources (Cmd+K)
-- **Widgets** — Display dashboard widgets on resource pages
-
-### Widgets
-
-Widgets can be displayed on resource pages (list, create, edit, view) like Filament:
-
-```php
-use MaherElGamil\Rocket\Dashboard\StatWidget;
-use MaherElGamil\Rocket\Dashboard\RecentRecordsWidget;
-use MaherElGamil\Rocket\Resources\Resource;
-use MaherElGamil\Rocket\Tables\Table;
-
-final class UserResource extends Resource
-{
-    protected static string $model = User::class;
-
-    public static function table(Table $table): Table
-    {
-        return $table->columns([...]);
-    }
-
-    public static function widgets(): array
-    {
-        return [
-            StatWidget::make('Total Users', User::query()->count())
-                ->columnSpan(3)
-                ->only(['list']),  // Show only on list page
-
-            RecentRecordsWidget::make('Recent Users')
-                ->columnSpan(3)
-                ->resource(UserResource::class)
-                ->limit(5),
-        ];
-    }
-}
-```
-
-**Available Widgets:**
-
-- `StatWidget::make($label, $value)` — Single value (number, string)
-- `ChartWidget::make($title, $type, $data, $color)` — Line, Bar, Area charts
-- `TableWidget::make($title, $columns, $rows)` — Data table
-- `RecentRecordsWidget::make($title)` — Latest records from a resource
-- `ActivityFeedWidget::make($title, $items)` — Activity timeline
-
-**Widget Options:**
-
-- `->columnSpan(1-6)` — Grid column width
-- `->only(['list', 'create', 'edit', 'view'])` — Show on specific pages
-- (calling nothing renders on all pages)
-
-### Table
-
-- **Columns**: Text, Boolean, Icon, Image, Badge
-- **Sorting** — Column sorting
-- **Search** — Global search across defined columns
-- **Pagination** — Configurable per-page (10, 25, 50, 100)
-- **Filters**: Select, Ternary, Date Range, Trashed
-- **Row actions**: Edit, View, Delete (with confirmation)
-- **Bulk actions**: Bulk delete (with confirmation)
-
-### Form Fields
-
-- TextInput, Textarea
-- Select, MultiSelect
-- Checkbox, Radio, Toggle
-- DatePicker
-- BelongsTo (dropdown)
-- BelongsToMany (multi-select)
-- FileUpload (with preview)
-- KeyValue (dynamic key-value pairs)
-- Section (field grouping)
-- Tabs (tabbed forms)
-
-### Page Blocks (Custom Pages)
-
-- **Widget** (`WidgetBlock`) — Embed dashboard widgets
-- **Grid** (`GridBlock`) — Multi-column layouts
-- **HTML** (`HtmlBlock`) — Raw HTML content
-
-### Internationalization (i18n) & RTL
-
-Rocket ships with a JSON-based translation layer and a locale switcher in the
-header. Translations can be overridden per-app by publishing the lang files:
-
-```bash
-php artisan vendor:publish --tag=rocket-lang
-```
-
-Configure the panel with `->locale()` and `->availableLocales()` to enable the
-switcher. RTL scripts (e.g. Arabic) are handled automatically via Tailwind
-logical properties — the panel shell sets `dir` based on the active locale.
-
-### Sidebar
-
-The panel layout is built on shadcn's Sidebar primitives (`sidebar-08`
-pattern). `sheet.tsx`, `tooltip.tsx`, `sidebar.tsx`, and the `use-mobile`
-hook are vendored inside the package so host apps don't need to install them
-separately.
-
-### Authorization
-
-Register Laravel **policies** for your models. Rocket checks:
-- `viewAny` — Show in navigation
-- `view` — View record page
-- `create` — Create new record
-- `update` — Edit record
-- `delete` — Delete record
-
-Users who cannot `viewAny` don't see the resource in the sidebar.
-
-## Configuration
-
-Publish the config file:
-
-```bash
-php artisan vendor:publish --tag=rocket-config
-```
-
-See `config/rocket.php` for available options.
-
-## Architecture
-
-```
-src/
-├── Commands/              # Artisan commands (rocket:make-*)
-├── Dashboard/             # Widget classes
-├── Facades/               # Rocket facade
-├── Forms/Components/      # Form field components
-├── Http/Controllers/     # Inertia controllers
-├── Http/Middleware/      # Request handling
-├── Pages/                 # Page classes (CRUD + custom)
-├── Pages/Blocks/          # Block types
-├── Panel/                 # Panel & PanelProvider
-├── Resources/             # Resource & RelationManager
-├── Support/              # Contracts, Enums
-└── Tables/               # Table, Columns, Filters, Actions
-```
-
-```
-resources/js/
-├── components/
-│   ├── block-renderer.tsx
-│   ├── widget-renderer.tsx
-│   ├── data-table.tsx
-│   ├── record-form.tsx
-│   └── ui/               # shadcn/ui components
-├── lib/
-│   ├── types.ts          # TypeScript types
-│   └── utils.ts
-└── pages/
-    ├── page.tsx
-    └── dashboard.tsx
-```
+| | |
+| --- | --- |
+| [Installation](docs/getting-started/installation.md) | Requirements and wiring |
+| [Quick Start](docs/getting-started/quick-start.md) | Your first panel + resource |
+| [Panel Configuration](docs/panels/configuration.md) | Every `->` method, default, and behavior |
+| [Resources](docs/resources/overview.md) | Model binding, pages, navigation |
+| [Tables](docs/tables/columns.md) | Columns, filters, actions |
+| [Forms](docs/forms/fields.md) | Field types, validation, layout |
+| [Widgets](docs/widgets/overview.md) | Dashboard + resource widgets |
+| [Authorization](docs/authorization.md) | Policies and visibility |
+| [i18n & RTL](docs/i18n.md) | Locale switcher, translations, logical layout |
+| [Configuration](docs/configuration.md) | `config/rocket.php` reference |
+| [Artisan Commands](docs/cli.md) | `rocket:make-*` generators |
+| [Extending](docs/advanced/extending.md) | Add custom columns, fields, widgets |
 
 ## Testing
-
-Clone the repository and run the package's test suite:
 
 ```bash
 git clone https://github.com/maherelgamil/rocketphp.git
@@ -351,6 +108,10 @@ cd rocketphp
 composer install
 ./vendor/bin/pest
 ```
+
+## Contributing
+
+PRs welcome — see the [contributing guide](docs/contributing.md).
 
 ## License
 
