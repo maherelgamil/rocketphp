@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use MaherElGamil\Rocket\Forms\Form;
 use MaherElGamil\Rocket\Panel\Panel;
+use MaherElGamil\Rocket\Resources\RelationManagers\RelationManagerRenderer;
 
 class ViewRecordPage extends ResourcePage
 {
