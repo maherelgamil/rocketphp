@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use MaherElGamil\Rocket\Http\Controllers\DashboardController;
 use MaherElGamil\Rocket\Http\Controllers\GlobalSearchController;
+use MaherElGamil\Rocket\Http\Controllers\LocaleController;
 use MaherElGamil\Rocket\Http\Controllers\NotificationController;
 use MaherElGamil\Rocket\Http\Controllers\PageController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
@@ -95,6 +96,10 @@ final class PanelManager
                 ->defaults('panelId', $panel->id())
                 ->name('dashboard');
 
+            Route::get('/', [DashboardController::class, 'show'])
+                ->defaults('panelId', $panel->id())
+                ->name('dashboard');
+
             if ($panel->isGlobalSearchEnabled()) {
                 Route::get('search', [GlobalSearchController::class, 'search'])
                     ->defaults('panelId', $panel->id())
@@ -118,6 +123,10 @@ final class PanelManager
                     ->defaults('panelId', $panel->id())
                     ->name('notifications.read');
             }
+
+            Route::post('locale', [LocaleController::class, 'store'])
+                ->defaults('panelId', $panel->id())
+                ->name('locale.store');
 
             Route::get('pages/{page}', [PageController::class, 'show'])
                 ->defaults('panelId', $panel->id())
