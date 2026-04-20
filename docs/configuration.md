@@ -68,6 +68,7 @@ what you need.
 | `rocket-lang` | `lang/vendor/rocket/{locale}.json` | Override translations. See [i18n](i18n.md). |
 | `rocket-views` | `resources/views/vendor/rocket/` | Override the Blade root layout. |
 | `rocket-assets` | `resources/js/vendor/rocketphp/` | Fork the React frontend. |
+| `rocket-stubs` | `stubs/rocket/` | Customise the templates used by `rocket:make-*` generators. |
 
 Publish a single tag:
 

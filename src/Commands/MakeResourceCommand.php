@@ -6,9 +6,12 @@ namespace MaherElGamil\Rocket\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use MaherElGamil\Rocket\Commands\Concerns\ResolvesStubs;
 
 final class MakeResourceCommand extends Command
 {
+    use ResolvesStubs;
+
     protected $signature = 'rocket:make-resource {name} {--model=}';
 
     protected $description = 'Create a new Rocket resource class.';
@@ -36,45 +39,15 @@ final class MakeResourceCommand extends Command
             mkdir(dirname($path), 0755, true);
         }
 
-        $stub = $this->stub($name, $modelFqcn);
-
-        file_put_contents($path, $stub);
+        file_put_contents($path, $this->renderStub('resource', [
+            'namespace' => 'App\\Rocket\\Resources',
+            'class' => $name,
+            'model' => class_basename($modelFqcn),
+            'modelFqcn' => ltrim($modelFqcn, '\\'),
+        ]));
 
         $this->info("Resource [{$name}] created at {$path}.");
 
         return self::SUCCESS;
-    }
-
-    private function stub(string $class, string $modelFqcn): string
-    {
-        $model = class_basename($modelFqcn);
-
-        return <<<PHP
-<?php
-
-declare(strict_types=1);
-
-namespace App\Rocket\Resources;
-
-use {$modelFqcn};
-use MaherElGamil\\Rocket\\Resources\\Resource;
-use MaherElGamil\\Rocket\\Tables\\Columns\\TextColumn;
-use MaherElGamil\\Rocket\\Tables\\Table;
-
-final class {$class} extends Resource
-{
-    protected static string \$model = {$model}::class;
-
-    public static function table(Table \$table): Table
-    {
-        return \$table
-            ->columns([
-                TextColumn::make('id')->sortable(),
-            ])
-            ->searchable(['id']);
-    }
-}
-
-PHP;
     }
 }

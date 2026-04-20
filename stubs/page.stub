@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use MaherElGamil\Rocket\Pages\Page;
+use MaherElGamil\Rocket\Panel\Panel;
+
+final class {{ class }} extends Page
+{
+    public function getTitle(): string
+    {
+        return '{{ title }}';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function content(Panel $panel): array
+    {
+        return [];
+    }
+}

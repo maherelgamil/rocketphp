@@ -21,6 +21,18 @@ app/Rocket/Resources/
 Rocket auto-discovers these and wires them up to the resource's route
 group. No manual registration is required.
 
+## Generate a page
+
+Scaffold a resource-scoped page with the `--resource` flag:
+
+```bash
+php artisan rocket:make-page PublishQueue --resource=Post
+# → app/Rocket/Resources/PostResource/Pages/PublishQueuePage.php
+```
+
+See [Pages overview → Generating a page](../pages/overview.md#generating-a-page)
+for the full signature and stub customisation.
+
 ## Write a page
 
 Extend `ResourcePage`:

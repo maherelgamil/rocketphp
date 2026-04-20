@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket;
 
 use Illuminate\Support\ServiceProvider;
+use MaherElGamil\Rocket\Commands\MakePageCommand;
 use MaherElGamil\Rocket\Commands\MakePanelCommand;
 use MaherElGamil\Rocket\Commands\MakeResourceCommand;
 use MaherElGamil\Rocket\Panel\PanelManager;
@@ -42,10 +43,15 @@ final class RocketServiceProvider extends ServiceProvider
             __DIR__.'/../lang' => lang_path('vendor/rocket'),
         ], 'rocket-lang');
 
+        $this->publishes([
+            __DIR__.'/../stubs' => base_path('stubs/rocket'),
+        ], 'rocket-stubs');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MakePanelCommand::class,
                 MakeResourceCommand::class,
+                MakePageCommand::class,
             ]);
         }
     }

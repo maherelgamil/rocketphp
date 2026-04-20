@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ modelFqcn }};
+use MaherElGamil\Rocket\Resources\Resource;
+use MaherElGamil\Rocket\Tables\Columns\TextColumn;
+use MaherElGamil\Rocket\Tables\Table;
+
+final class {{ class }} extends Resource
+{
+    protected static string $model = {{ model }}::class;
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('id')->sortable(),
+            ])
+            ->searchable(['id']);
+    }
+}
