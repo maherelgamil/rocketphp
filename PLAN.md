@@ -182,7 +182,66 @@ Filament-style `Exporter` / `Importer` classes with per-column DSLs, queued via 
 
 ---
 
-## Phase 7 — Audit Log
+## Phase 7 — Panel Authentication
+
+**Goal.** Each panel ships its own scoped auth pages (login, register, password reset, email verification) so the panel is fully self-contained — no dependency on the host app's auth routes. Fluent config mirrors Filament's API.
+
+### Panel config API
+
+```php
+Panel::make()
+    ->login()                          // enable panel-scoped login  (default: true)
+    ->registration()                   // enable self-registration
+    ->passwordReset()                  // enable forgot-password flow
+    ->emailVerification()              // gate panel behind verified email
+    ->profile()                        // enable /profile edit page inside the panel
+    ->authGuard('admin')               // custom guard (default: 'web')
+    ->authMiddleware(['auth:admin'])   // override the full middleware stack
+    ->loginPage(MyLoginPage::class)    // swap in a custom login page class
+    ->registrationPage(...)            // swap in a custom register page class
+    ->passwordResetPage(...)
+```
+
+### Backend
+
+- `PanelAuthController` — handles `showLogin`, `login`, `logout`, `showRegister`, `register`, `showForgot`, `sendResetLink`, `showReset`, `resetPassword`, `showVerify`, `resend`.
+- Routes registered automatically under `{panel.path}/` only when the feature is enabled:
+  - `GET  {panel}/login` · `POST {panel}/login` · `POST {panel}/logout`
+  - `GET  {panel}/register` · `POST {panel}/register`
+  - `GET  {panel}/forgot-password` · `POST {panel}/forgot-password`
+  - `GET  {panel}/reset-password/{token}` · `POST {panel}/reset-password`
+  - `GET  {panel}/verify-email` · `GET {panel}/verify-email/{id}/{hash}` · `POST {panel}/verify-email/resend`
+  - `GET  {panel}/profile` · `PUT {panel}/profile`
+- `Panel::authMiddleware()` replaces the default `['auth']` guard on protected routes with the panel-scoped equivalent.
+- `Panel::login(false)` disables the panel login page and falls back to the host app's `/login`.
+- Rate limiting: login throttled at 5 attempts / minute per IP + email (matches Fortify default).
+- `CreatePanelUser` / `UpdatePanelProfile` action hooks — override to customize user creation or profile update logic per panel.
+- `Panel::profile()` renders a profile edit page inside the panel chrome (name, email, password change).
+
+### Frontend
+
+- `login.tsx`, `register.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `verify-email.tsx`, `profile.tsx` — standalone Inertia pages rendered inside a minimal auth layout (no sidebar), branded with `panel.brand` and `panel.theme`.
+- Auth layout: centered card, panel logo/brand name, Tailwind v4, dark mode aware.
+- Validation errors displayed inline per field (reuses existing Inertia error bag pattern).
+
+### Tests
+
+- Login: correct credentials redirect to panel, wrong credentials return validation error, throttle kicks in after 5 attempts.
+- Register: creates user + redirects; disabled registration returns 404.
+- Password reset: sends reset link email, valid token resets password, expired token returns error.
+- Email verification: unverified user redirected to verify page, verified link marks email as verified.
+- Profile: name/email update persists, password change requires current password.
+- `Panel::login(false)` disables the route entirely.
+
+### Done when
+
+- Demo panel has login/register/forgot-password working end-to-end at `/rocket/login`.
+- All auth pages respect the panel theme (primary color, radius, font).
+- Switching `authGuard` to a custom guard routes auth through that guard.
+
+---
+
+## Phase 8 — Audit Log
 
 **Goal.** Opt-in per-resource change tracking using `spatie/laravel-activitylog`.
 
@@ -203,7 +262,7 @@ Filament-style `Exporter` / `Importer` classes with per-column DSLs, queued via 
 
 ---
 
-## Phase 8 — Multi-tenancy (integration surface)
+## Phase 9 — Multi-tenancy (integration surface)
 
 **Goal.** Optional `stancl/tenancy` helpers — we don't own the model, we document the two supported shapes.
 
@@ -235,7 +294,8 @@ Filament-style `Exporter` / `Importer` classes with per-column DSLs, queued via 
 
 Phases 1–6 shipped. Remaining:
 
-7. **Audit log (Phase 7)** and **multi-tenancy (Phase 8)** — post-1.0 integration surfaces; drive by real consumer demand rather than speculation.
+7. **Panel Authentication (Phase 7)** — self-contained login/register/password-reset per panel; highest user-visible value.
+8. **Audit log (Phase 8)** and **multi-tenancy (Phase 9)** — post-1.0 integration surfaces; drive by real consumer demand rather than speculation.
 
 ---
 
