@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket;
 
 use Illuminate\Support\ServiceProvider;
+use MaherElGamil\Rocket\Commands\MakeExporterCommand;
+use MaherElGamil\Rocket\Commands\MakeImporterCommand;
 use MaherElGamil\Rocket\Commands\MakePageCommand;
 use MaherElGamil\Rocket\Commands\MakePanelCommand;
 use MaherElGamil\Rocket\Commands\MakeResourceCommand;
@@ -23,6 +25,7 @@ final class RocketServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'rocket');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/rocket.php');
 
         app('translator')->addJsonPath(__DIR__.'/../lang');
@@ -47,11 +50,17 @@ final class RocketServiceProvider extends ServiceProvider
             __DIR__.'/../stubs' => base_path('stubs/rocket'),
         ], 'rocket-stubs');
 
+        $this->publishes([
+            __DIR__.'/../database/migrations' => database_path('migrations'),
+        ], 'rocket-migrations');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MakePanelCommand::class,
                 MakeResourceCommand::class,
                 MakePageCommand::class,
+                MakeExporterCommand::class,
+                MakeImporterCommand::class,
             ]);
         }
     }

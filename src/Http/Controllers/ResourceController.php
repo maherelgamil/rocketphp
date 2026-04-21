@@ -9,6 +9,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use MaherElGamil\Rocket\Models\Export;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Response;
 use MaherElGamil\Rocket\Forms\Components\BelongsTo;
 use MaherElGamil\Rocket\Forms\Components\Field;
@@ -254,6 +258,57 @@ final class ResourceController extends Controller
             ->with('success', $message);
     }
 
+    public function headerAction(Request $request, string $resource, string $headerAction): RedirectResponse
+    {
+        [$panel, $resourceClass] = $this->resolve($request, $resource);
+
+        $table = $resourceClass::table(Table::make($resourceClass));
+        $action = $table->getHeaderAction($headerAction);
+        if ($action === null) {
+            abort(404);
+        }
+
+        $action->authorize($request, $resourceClass);
+
+        $query = $resourceClass::query();
+        $table->applyFilters($query, $request);
+        if ($request->filled('search')) {
+            $table->applySearch($query, (string) $request->query('search'));
+        }
+
+        $action->handle($request, $query);
+
+        return redirect()
+            ->to($panel->url($resourceClass::getSlug()))
+            ->with('success', __('Export queued. You will be notified when it is ready.'));
+    }
+
+    public function downloadExport(Request $request, int $export): StreamedResponse
+    {
+        /** @var Export|null $record */
+        $record = Export::query()->find($export);
+
+        if ($record === null || $record->completed_at === null) {
+            abort(404);
+        }
+
+        $userId = $request->user()?->getAuthIdentifier();
+        if ($record->user_id !== null && $record->user_id !== $userId) {
+            abort(403);
+        }
+
+        $path = 'rocket-exports/'.$record->getKey().'/'.$record->file_name;
+        $disk = Storage::disk($record->file_disk);
+
+        if (! $disk->exists($path)) {
+            abort(404);
+        }
+
+        return $disk->download($path, $record->file_name, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function bulkAction(Request $request, string $resource, string $bulkAction): RedirectResponse
     {
         [$panel, $resourceClass] = $this->resolve($request, $resource);
@@ -281,9 +336,13 @@ final class ResourceController extends Controller
 
         $bulk->handle($models);
 
+        $flash = $bulk instanceof \MaherElGamil\Rocket\Tables\Actions\ExportBulkAction
+            ? __('Export queued. You will be notified when it is ready.')
+            : $resourceClass::getPluralLabel().' deleted.';
+
         return redirect()
             ->to($panel->url($resourceClass::getSlug()))
-            ->with('success', $resourceClass::getPluralLabel().' deleted.');
+            ->with('success', $flash);
     }
 
     private function findField(Form $form, string $name): ?Field

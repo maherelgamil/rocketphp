@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ modelFqcn }};
+use MaherElGamil\Rocket\Imports\ImportColumn;
+use MaherElGamil\Rocket\Imports\Importer;
+
+final class {{ class }} extends Importer
+{
+    protected static string $model = {{ model }}::class;
+
+    /**
+     * @return array<int, ImportColumn>
+     */
+    public static function getColumns(): array
+    {
+        return [
+            ImportColumn::make('name')
+                ->requiredMapping()
+                ->rules(['required', 'string', 'max:255'])
+                ->example('Rocket'),
+            // ImportColumn::make('category_id')
+            //     ->relationship('category', 'slug')
+            //     ->rules(['required']),
+        ];
+    }
+
+    public function resolveRecord(): ?{{ model }}
+    {
+        // Default: create a new record. Override to find-or-new by a unique column:
+        // return {{ model }}::query()->firstOrNew(['email' => $this->getData()['email']]);
+
+        return new {{ model }};
+    }
+}

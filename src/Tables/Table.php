@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use MaherElGamil\Rocket\Tables\Actions\Action;
 use MaherElGamil\Rocket\Tables\Actions\BulkAction;
+use MaherElGamil\Rocket\Tables\Actions\HeaderAction;
 use MaherElGamil\Rocket\Tables\Columns\Column;
 use MaherElGamil\Rocket\Tables\Filters\Filter;
 
@@ -28,6 +29,9 @@ final class Table
 
     /** @var array<string, BulkAction> */
     private array $bulkActions = [];
+
+    /** @var array<string, HeaderAction> */
+    private array $headerActions = [];
 
     private ?string $defaultSort = null;
 
@@ -124,6 +128,31 @@ final class Table
         }
 
         return $this;
+    }
+
+    /**
+     * @param  array<int, HeaderAction>  $actions
+     */
+    public function headerActions(array $actions): self
+    {
+        foreach ($actions as $action) {
+            $this->headerActions[$action->getName()] = $action;
+        }
+
+        return $this;
+    }
+
+    public function getHeaderAction(string $name): ?HeaderAction
+    {
+        return $this->headerActions[$name] ?? null;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function headerActionsToArray(): array
+    {
+        return array_map(static fn (HeaderAction $a) => $a->toArray(), array_values($this->headerActions));
     }
 
     public function actionsOverflowAfter(int $after): self

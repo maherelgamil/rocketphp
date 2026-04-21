@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ modelFqcn }};
+use MaherElGamil\Rocket\Exports\ExportColumn;
+use MaherElGamil\Rocket\Exports\Exporter;
+
+final class {{ class }} extends Exporter
+{
+    protected static string $model = {{ model }}::class;
+
+    /**
+     * @return array<int, ExportColumn>
+     */
+    public static function getColumns(): array
+    {
+        return [
+            ExportColumn::make('id')->label('ID'),
+            // ExportColumn::make('name'),
+            // ExportColumn::make('created_at'),
+        ];
+    }
+}

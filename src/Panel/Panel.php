@@ -565,6 +565,7 @@ final class Panel
                 'icon' => $page->getNavigationIcon(),
                 'group' => $page->getNavigationGroup(),
                 'sort' => $page->getNavigationSort(),
+                'slug' => $page->getSlug(),
                 'url' => url($this->getPath().'/pages/'.$page->getSlug()),
             ];
         }

@@ -101,4 +101,36 @@ return [
         'name' => env('ROCKET_BRAND', 'Rocket'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Exports
+    |--------------------------------------------------------------------------
+    |
+    | Settings for CSV exports dispatched via Bus batches. `chunk_size` is the
+    | number of records per chunk job — tune to balance DB round-trips against
+    | peak memory. `disk` is the filesystem disk used for chunk files and the
+    | final assembled CSV; defaults to the app's default disk.
+    |
+    */
+
+    'exports' => [
+        'chunk_size' => (int) env('ROCKET_EXPORT_CHUNK_SIZE', 100),
+        'disk' => env('ROCKET_EXPORT_DISK'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Imports
+    |--------------------------------------------------------------------------
+    |
+    | Settings for CSV imports dispatched via Bus batches. `chunk_size` is the
+    | number of CSV rows processed per chunk job.
+    |
+    */
+
+    'imports' => [
+        'chunk_size' => (int) env('ROCKET_IMPORT_CHUNK_SIZE', 100),
+        'disk' => env('ROCKET_IMPORT_DISK'),
+    ],
+
 ];

@@ -28,7 +28,7 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 - `ResourceController` + optional row / bulk action routes
 - Panel-scoped AJAX lookup route (`{resource}/lookup/{field}`) for searchable relation fields
 - Dashboard route + widgets *(shipped)*
-- Custom pages *(shipped)* — `Page` classes discoverable via `Panel::discoverPages()`
+- Custom pages *(shipped)* — `Page` classes discoverable via `Panel::discoverPages()`; `rocket:make-page` generator alongside `rocket:make-panel` / `rocket:make-resource`
 - Laravel Gate/Policy integration (`viewAny`, `view`, `create`, `update`, `delete`); nav auto-filtered
 - `RenderRocketErrorPages` middleware converts 403 / 404 / 419 / 500 GET responses into Inertia error pages
 - Global search *(shipped)* — `⌘K` palette with cross-resource search
@@ -69,8 +69,8 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 
 ### Frontend
 - Self-contained React entrypoint (`rocket.tsx`) + pages: list, create, edit, view, dashboard, error
-- **shadcn components:** badge, button, card, input, label, select, skeleton, switch, table, textarea, popover, calendar, sonner, dropdown-menu
-- **Responsive `PanelShell`:** collapsible desktop sidebar + mobile slide-in drawer *(configurable)*
+- **shadcn components:** badge, button, card, input, label, select, skeleton, switch, table, textarea, popover, calendar, sonner, dropdown-menu, sheet, sidebar
+- **Responsive `PanelShell`:** built on shadcn `sidebar` + `sheet` primitives — collapsible desktop sidebar + mobile slide-in drawer *(configurable)*
 - Flash-to-toast wiring via `useFlashToast` hook
 - Semantic palette mapping (`badgeColorClasses`) with `dark:` variants
 - Lucide icons rendered dynamically via `lucide-react/dynamic`
@@ -78,7 +78,7 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 
 ### Testing
 - Pest feature tests across every surface: resources, forms, auth, actions, filters, dashboard, enum support, `Color` tokens, `BelongsTo` (+ AJAX lookup), `BelongsToMany`, `Section`, `Tabs`, `KeyValue`, all column types, all formatters, relation managers (scoping, namespacing, policies, layout, default per_page)
-- **99 tests**, all green
+- **231 tests / 526 assertions**, all green
 
 ---
 
@@ -125,51 +125,60 @@ Each phase below includes a scope statement, backend / frontend / tests breakdow
 
 ---
 
-## Phase 5 — i18n
+## Phase 5 — i18n *(shipped)*
 
-**Goal.** Every user-facing string routed through translators; one `lang/vendor/rocket/*.json` file per locale consumers can override.
-
-### Backend
-- Audit every `'literal string'` in panel code; replace with `__('rocket::...')`.
-- Publish tag `rocket-lang` exposing `lang/vendor/rocket/en.json` (and optionally `ar.json`).
-- `Panel::locale(string | Closure)` to pin the panel locale independent of the app default (Closure receives request).
-
-### Frontend
-- Strings currently hard-coded in React (`"No records found."`, `"Search..."`, action labels, empty states) come from server as part of schema payloads — most already do via column labels. Pass a `translations` map in `panel.toSharedProps()` for the remaining frontend-only copy.
-
-### Tests
-- Snapshot test: load panel under `ar` locale, assert an expected string is translated and not the English fallback.
-- Arch test: no hard-coded user-facing English strings remain in the package's React files (regex check over `components/` + `pages/`).
-
-### Done when
-- Shipping with English + Arabic out of the box.
-- Host-app README has a "Translations" section.
+- Full `Panel::locale(string | Closure)` API for pinning panel locale independent of app default.
+- Publish tag `rocket-lang` exposing `lang/vendor/rocket/en.json` + `ar.json`.
+- Frontend translations map serialized via `panel.toSharedProps()` for React-only copy; server-driven labels flow through schema payloads.
+- RTL-aware `PanelShell` layout shipped alongside shadcn sidebar migration.
 
 ---
 
-## Phase 6 — Import / Export
+## Phase 6 — Import / Export *(shipped, CSV only)*
 
-**Goal.** One-click CSV export on any resource list; queued CSV import with validation + error reporting.
+Filament-style `Exporter` / `Importer` classes with per-column DSLs, queued via `Illuminate\Bus\Batch` for bounded peak memory.
 
-### Backend
-- `ExportBulkAction` — default available on every resource with `hasExport()` = true. Streams CSV with the columns from `Table`.
-- `ImportAction` — resource header action, opens a modal accepting a file. Dispatches a queued `ImportResourceJob` that parses CSV via league/csv, validates row-by-row against the form's validation rules, and records success/fail counts.
-- `ImportReport` model to persist per-row errors; lookup page at `{panel}/imports/{report}`.
-- `Resource::importMapping()` — columns → field names. Required.
+### Exports
+- `Exporter` abstract + `ExportColumn::make('id')->label()->formatStateUsing()->counts()->money()->prefix()->suffix()`.
+- `Resource::exporter(): ?class-string<Exporter>` hook.
+- `ExportBulkAction::make(Exporter::class)` — exports selected rows (uses bulk-actions route).
+- `ExportAction::make(Exporter::class)` — new `HeaderAction` primitive, exports full filtered query.
+- `Table::headerActions([...])` + `POST {panel}/{resource}/header-actions/{action}` route.
+- `PrepareExportJob` → plans chunks via ID ranges (avoids loading full resultset) → fans out `ExportCsvChunkJob[]` in a `Bus::batch()` → `.finally(CompleteExportJob)` concatenates chunks + cleans up.
+- `ExportCsvChunkJob` uses `Builder::cursor()` + `fputcsv` line-by-line for bounded memory.
+- Download endpoint: `GET {panel}/exports/{id}/download`, user-scoped.
+- `ExportReadyNotification` dispatched on completion to the export initiator (Laravel `Notifiable`).
+- `rocket:make-exporter {name} --model=`.
 
-### Frontend
-- Export action is a standard bulk action — reuse existing UI.
-- Import modal with file picker + "download sample CSV" button (generated server-side from mapping).
-- Post-upload: show progress (queue status via short-polling on the report id).
+### Imports
+- `Importer` abstract + `ImportColumn::make('sku')->label()->requiredMapping()->guess([...])->rules([...])->example('X')->relationship('category','slug')->castStateUsing()->fillRecordUsing()->boolean()->numeric()->array()->ignoreBlankState()`.
+- `Resource::importer(): ?class-string<Importer>` hook.
+- `ImportAction::make(Importer::class)` — header action; validates upload + mapping, stores CSV, dispatches `PrepareImportJob`.
+- `PrepareImportJob` → reads CSV, partitions into `ImportCsvChunkJob[]` via `Bus::batch()` → `CompleteImportJob`.
+- `ImportCsvChunkJob`: map → cast → validate (`Validator::make` against column rules) → `saveRow()`; persists failures to `rocket_failed_import_rows`.
+- `GET {panel}/imports/{id}` status page + `GET {panel}/imports/{id}/status` JSON poll endpoint + `GET {panel}/imports/{id}/failed-rows.csv` downloadable failure report.
+- `GET {panel}/importers/{b64}/example.csv` sample generated from `example()` values.
+- `POST {panel}/importers/{b64}/preview` returns auto-guessed column mapping + first 10 rows for the UI mapping modal.
+- `ImportCompletedNotification` on completion.
+- `rocket:make-importer {name} --model=`.
+
+### Persistence
+- Migrations (loadMigrationsFrom + `rocket-migrations` publish tag):
+  - `rocket_exports` (id, exporter, file_name, file_disk, total_rows, successful_rows, batch_id, user_id, completed_at).
+  - `rocket_imports` (adds processed_rows, failed_rows).
+  - `rocket_failed_import_rows` (fk import_id, json data, validation_error).
+
+### Config
+- `rocket.exports.chunk_size` (default 100), `rocket.exports.disk` (default app disk).
+- `rocket.imports.chunk_size` (default 100), `rocket.imports.disk`.
 
 ### Tests
-- Roundtrip: seed 50 rows, export, reimport, assert count matches and data is identical.
-- Validation failures are captured in the report, not silently dropped.
-- Very large CSV (10k rows) exports stream without loading everything into memory — assert peak memory stays below a threshold.
+- **20 new tests / 48 assertions** covering: column casting, CSV generation, end-to-end batched run (sync queue), chunk cleanup, empty-query handling, bulk + header action dispatch, download endpoint auth, mapping guess, validation failure persistence, example CSV, preview endpoint, failed-rows CSV, cross-user access denial.
 
-### Done when
-- Host app can export Posts and reimport without duplicates.
-- Queue worker is required; CI runs with a synchronous queue so tests stay fast.
+### Not in scope (defer)
+- XLSX (CSV only for now).
+- Mapping persistence across uploads per user.
+- "Reimport failed rows" shortcut button (data is there; UI only).
 
 ---
 
@@ -218,16 +227,14 @@ Each phase below includes a scope statement, backend / frontend / tests breakdow
 - [ ] README + CHANGELOG kept in sync with every public-API change
 - [ ] SemVer git tags on all releases; document breaking changes
 - [ ] CI pipeline: matrix over Laravel 11 / 12 / 13 and PHP 8.2 / 8.3 / 8.4
-- [ ] Frontend bundle size audit (current `rocket.js` sits ~815 kB raw / ~238 kB gzip — watch for regressions). Move Recharts (Phase 4) behind a dynamic import to avoid regressing the base bundle.
+- [ ] Frontend bundle size audit — re-measure `rocket.js` post shadcn sidebar migration; watch for regressions. Recharts (Phase 4) is already lazy-loaded.
 
 ---
 
 ## Recommended order
 
-Phases 1-4 shipped. Remaining:
+Phases 1–6 shipped. Remaining:
 
-5. **i18n (Phase 5)** — before 1.0 tag; do it once, all strings in one pass.
-6. **Import / export (Phase 6)** — after 1.0 tag; it's additive.
 7. **Audit log (Phase 7)** and **multi-tenancy (Phase 8)** — post-1.0 integration surfaces; drive by real consumer demand rather than speculation.
 
 ---

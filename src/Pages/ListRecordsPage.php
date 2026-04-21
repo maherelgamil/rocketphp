@@ -87,6 +87,7 @@ class ListRecordsPage extends ResourcePage
             'row_actions' => $table->rowActionsToArray(),
             'row_actions_overflow_after' => $table->getActionsOverflowAfter(),
             'bulk_actions' => $table->bulkActionsToArray(),
+            'header_actions' => $table->headerActionsToArray(),
             'table_filters' => array_map(
                 static fn ($filter) => $filter->toSchema($request),
                 $table->getFilters(),

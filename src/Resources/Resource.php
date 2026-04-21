@@ -277,6 +277,26 @@ abstract class Resource
         return static::query();
     }
 
+    /**
+     * FQCN of the Exporter for this resource, or null when exports are disabled.
+     *
+     * @return class-string<\MaherElGamil\Rocket\Exports\Exporter>|null
+     */
+    public static function exporter(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * FQCN of the Importer for this resource, or null when imports are disabled.
+     *
+     * @return class-string<\MaherElGamil\Rocket\Imports\Importer>|null
+     */
+    public static function importer(): ?string
+    {
+        return null;
+    }
+
     public static function hasForm(): bool
     {
         return static::form(Form::make(static::class))->getSchema() !== [];

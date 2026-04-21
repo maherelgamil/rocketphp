@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use MaherElGamil\Rocket\Http\Controllers\DashboardController;
 use MaherElGamil\Rocket\Http\Controllers\GlobalSearchController;
+use MaherElGamil\Rocket\Http\Controllers\ImportController;
 use MaherElGamil\Rocket\Http\Controllers\LocaleController;
 use MaherElGamil\Rocket\Http\Controllers\NotificationController;
 use MaherElGamil\Rocket\Http\Controllers\PageController;
@@ -138,6 +139,42 @@ final class PanelManager
                 ->name('pages.action')
                 ->where('page', '[a-z0-9\-_]+')
                 ->where('action', '[a-z0-9\-_]+');
+
+            Route::post('{resource}/header-actions/{headerAction}', [ResourceController::class, 'headerAction'])
+                ->defaults('panelId', $panel->id())
+                ->name('resource.header-action')
+                ->where('resource', $resourceConstraint)
+                ->where('headerAction', '[a-z0-9\-_]+');
+
+            Route::get('exports/{export}/download', [ResourceController::class, 'downloadExport'])
+                ->defaults('panelId', $panel->id())
+                ->name('exports.download')
+                ->where('export', '[0-9]+');
+
+            Route::get('imports/{import}', [ImportController::class, 'show'])
+                ->defaults('panelId', $panel->id())
+                ->name('imports.show')
+                ->where('import', '[0-9]+');
+
+            Route::get('imports/{import}/status', [ImportController::class, 'status'])
+                ->defaults('panelId', $panel->id())
+                ->name('imports.status')
+                ->where('import', '[0-9]+');
+
+            Route::get('imports/{import}/failed-rows.csv', [ImportController::class, 'downloadFailedRows'])
+                ->defaults('panelId', $panel->id())
+                ->name('imports.failed-rows')
+                ->where('import', '[0-9]+');
+
+            Route::get('importers/{importer}/example.csv', [ImportController::class, 'example'])
+                ->defaults('panelId', $panel->id())
+                ->name('importers.example')
+                ->where('importer', '[A-Za-z0-9=+\/]+');
+
+            Route::post('importers/{importer}/preview', [ImportController::class, 'preview'])
+                ->defaults('panelId', $panel->id())
+                ->name('importers.preview')
+                ->where('importer', '[A-Za-z0-9=+\/]+');
 
             Route::post('{resource}/bulk-actions/{bulkAction}', [ResourceController::class, 'bulkAction'])
                 ->defaults('panelId', $panel->id())
