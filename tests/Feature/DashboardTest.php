@@ -46,7 +46,7 @@ it('renders the dashboard page with widgets', function () {
     $response->assertOk();
     $payload = $response->json();
 
-    expect($payload['component'])->toBe('rocket/Dashboard')
+    expect($payload['component'])->toBe('rocket/dashboard')
         ->and($payload['props']['content'])->toHaveCount(1)
         ->and($payload['props']['content'][0]['type'])->toBe('widget')
         ->and($payload['props']['content'][0]['widget']['type'])->toBe('stat')

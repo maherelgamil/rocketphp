@@ -65,7 +65,7 @@ class ViewRecordPage extends ResourcePage
 
     public function component(): string
     {
-        return 'rocket/ViewRecord';
+        return 'rocket/view-record';
     }
 
     public function can(Request $request): bool

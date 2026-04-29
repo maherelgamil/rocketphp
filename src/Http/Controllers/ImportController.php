@@ -7,7 +7,6 @@ namespace MaherElGamil\Rocket\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use MaherElGamil\Rocket\Imports\Importer;
@@ -100,7 +99,7 @@ final class ImportController extends Controller
             abort(403);
         }
 
-        return Inertia::render('rocket/Import', [
+        return Inertia::render('rocket/import', [
             'import' => [
                 'id' => $record->getKey(),
                 'importer' => $record->importer,

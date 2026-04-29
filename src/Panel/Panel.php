@@ -38,6 +38,25 @@ final class Panel
 
     private string $guard = 'web';
 
+    private bool $loginEnabled = true;
+
+    private bool $registrationEnabled = false;
+
+    private bool $passwordResetEnabled = false;
+
+    private bool $emailVerificationEnabled = false;
+
+    private bool $profileEnabled = false;
+
+    /** @var class-string|null */
+    private ?string $loginPage = null;
+
+    /** @var class-string|null */
+    private ?string $registrationPage = null;
+
+    /** @var class-string|null */
+    private ?string $passwordResetPage = null;
+
     private bool $globalSearchEnabled = true;
 
     private string $globalSearchPlaceholder = 'Search...';
@@ -155,9 +174,128 @@ final class Panel
         return $this;
     }
 
+    public function authGuard(string $guard): self
+    {
+        return $this->guard($guard);
+    }
+
     public function getGuard(): string
     {
         return $this->guard;
+    }
+
+    public function login(bool $enabled = true): self
+    {
+        $this->loginEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isLoginEnabled(): bool
+    {
+        return $this->loginEnabled;
+    }
+
+    public function registration(bool $enabled = true): self
+    {
+        $this->registrationEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isRegistrationEnabled(): bool
+    {
+        return $this->registrationEnabled;
+    }
+
+    public function passwordReset(bool $enabled = true): self
+    {
+        $this->passwordResetEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isPasswordResetEnabled(): bool
+    {
+        return $this->passwordResetEnabled;
+    }
+
+    public function emailVerification(bool $enabled = true): self
+    {
+        $this->emailVerificationEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isEmailVerificationEnabled(): bool
+    {
+        return $this->emailVerificationEnabled;
+    }
+
+    public function profile(bool $enabled = true): self
+    {
+        $this->profileEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isProfileEnabled(): bool
+    {
+        return $this->profileEnabled;
+    }
+
+    /**
+     * @param  class-string  $page
+     */
+    public function loginPage(string $page): self
+    {
+        $this->loginPage = $page;
+
+        return $this;
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getLoginPage(): ?string
+    {
+        return $this->loginPage;
+    }
+
+    /**
+     * @param  class-string  $page
+     */
+    public function registrationPage(string $page): self
+    {
+        $this->registrationPage = $page;
+
+        return $this;
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getRegistrationPage(): ?string
+    {
+        return $this->registrationPage;
+    }
+
+    /**
+     * @param  class-string  $page
+     */
+    public function passwordResetPage(string $page): self
+    {
+        $this->passwordResetPage = $page;
+
+        return $this;
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getPasswordResetPage(): ?string
+    {
+        return $this->passwordResetPage;
     }
 
     /**
@@ -510,6 +648,21 @@ final class Panel
                     'mark_all_read' => $this->url('notifications/read-all'),
                 ] : [],
             ],
+            'auth' => [
+                'login' => $this->loginEnabled,
+                'registration' => $this->registrationEnabled,
+                'password_reset' => $this->passwordResetEnabled,
+                'email_verification' => $this->emailVerificationEnabled,
+                'profile' => $this->profileEnabled,
+                'user' => $this->authUser(),
+                'urls' => [
+                    'login' => $this->loginEnabled ? $this->url('login') : null,
+                    'logout' => $this->loginEnabled ? $this->url('logout') : null,
+                    'register' => $this->registrationEnabled ? $this->url('register') : null,
+                    'forgot_password' => $this->passwordResetEnabled ? $this->url('forgot-password') : null,
+                    'profile' => $this->profileEnabled ? $this->url('profile') : null,
+                ],
+            ],
             'locale' => $this->getLocale(),
             'available_locales' => $this->getAvailableLocales(),
             'translations' => $this->loadTranslations(),
@@ -571,6 +724,23 @@ final class Panel
         }
 
         return $items;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function authUser(): ?array
+    {
+        $user = auth()->guard($this->guard)->user();
+
+        if ($user === null) {
+            return null;
+        }
+
+        return [
+            'name' => (string) ($user->name ?? $user->getAuthIdentifier()),
+            'email' => (string) ($user->email ?? ''),
+        ];
     }
 
     public function slugify(string $value): string

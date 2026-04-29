@@ -68,7 +68,7 @@ class EditRecordPage extends ResourcePage
 
     public function component(): string
     {
-        return 'rocket/EditRecord';
+        return 'rocket/edit-record';
     }
 
     public function can(Request $request): bool

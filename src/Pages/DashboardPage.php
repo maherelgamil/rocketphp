@@ -26,7 +26,7 @@ final class DashboardPage extends Page
 
     public function component(): string
     {
-        return 'rocket/Dashboard';
+        return 'rocket/dashboard';
     }
 
     /**

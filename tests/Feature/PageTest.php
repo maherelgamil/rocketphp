@@ -96,7 +96,7 @@ it('renders a registered page', function () {
     ])->get("/{$path}/pages/{$slug}");
 
     $response->assertOk();
-    expect($response->json('component'))->toBe('rocket/Page');
+    expect($response->json('component'))->toBe('rocket/page');
 });
 
 it('returns 404 for unknown page', function () {

@@ -30,7 +30,7 @@ class RenderRocketErrorPages
             return $response;
         }
 
-        return Inertia::render('rocket/Error', [
+        return Inertia::render('rocket/error', [
             'status' => $status,
             'title' => self::MESSAGES[$status]['title'],
             'message' => self::MESSAGES[$status]['message'],

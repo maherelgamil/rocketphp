@@ -196,6 +196,6 @@ it('notifications index page renders via Inertia', function () {
         ->get("/{$path}/notifications");
 
     $response->assertOk();
-    $response->assertJson(['component' => 'rocket/Notifications']);
+    $response->assertJson(['component' => 'rocket/notifications']);
     expect($response->json('props.pagination.total'))->toBe(1);
 });

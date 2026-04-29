@@ -32,6 +32,7 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 - Laravel Gate/Policy integration (`viewAny`, `view`, `create`, `update`, `delete`); nav auto-filtered
 - `RenderRocketErrorPages` middleware converts 403 / 404 / 419 / 500 GET responses into Inertia error pages
 - Global search *(shipped)* — `⌘K` palette with cross-resource search
+- Panel auth *(shipped)* — `Panel::login() / registration() / passwordReset() / emailVerification() / profile() / authGuard()`; conditional routes; `PanelAuthController` with per-IP+email login throttle (5/min); `Authenticate` middleware redirects unauth to panel-scoped login; `CreatePanelUser` / `UpdatePanelProfile` action hooks; sidebar footer user menu (avatar, name, email, profile, sign out)
 
 ### Forms
 - `Field` base + abstract schema; `Form::applyAfterSave()` + `Field::afterSave()` hook
@@ -78,7 +79,7 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 
 ### Testing
 - Pest feature tests across every surface: resources, forms, auth, actions, filters, dashboard, enum support, `Color` tokens, `BelongsTo` (+ AJAX lookup), `BelongsToMany`, `Section`, `Tabs`, `KeyValue`, all column types, all formatters, relation managers (scoping, namespacing, policies, layout, default per_page)
-- **231 tests / 526 assertions**, all green
+- **245 tests / 555 assertions**, all green
 
 ---
 
@@ -182,7 +183,7 @@ Filament-style `Exporter` / `Importer` classes with per-column DSLs, queued via 
 
 ---
 
-## Phase 7 — Panel Authentication
+## Phase 7 — Panel Authentication *(shipped)*
 
 **Goal.** Each panel ships its own scoped auth pages (login, register, password reset, email verification) so the panel is fully self-contained — no dependency on the host app's auth routes. Fluent config mirrors Filament's API.
 
@@ -292,10 +293,11 @@ Panel::make()
 
 ## Recommended order
 
-Phases 1–6 shipped. Remaining:
+Phases 1–7 shipped. Remaining:
 
-7. **Panel Authentication (Phase 7)** — self-contained login/register/password-reset per panel; highest user-visible value.
 8. **Audit log (Phase 8)** and **multi-tenancy (Phase 9)** — post-1.0 integration surfaces; drive by real consumer demand rather than speculation.
+
+Next focus: **Release 1.0 prep** — Packagist publish, CI matrix, bundle-size audit.
 
 ---
 

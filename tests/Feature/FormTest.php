@@ -49,7 +49,7 @@ function rocketInertia(string $uri): TestResponse
 it('renders the create page with the form schema', function () {
     $payload = rocketInertia('/test-admin/widgets/create')->json();
 
-    expect($payload['component'])->toBe('rocket/CreateRecord')
+    expect($payload['component'])->toBe('rocket/create-record')
         ->and($payload['props']['form']['fields'])->toHaveCount(4)
         ->and($payload['props']['form']['fields'][0]['type'])->toBe('text')
         ->and($payload['props']['form']['fields'][0]['name'])->toBe('name')
@@ -89,7 +89,7 @@ it('renders the edit page with populated state', function () {
 
     $payload = rocketInertia("/test-admin/widgets/{$widget->id}/edit")->json();
 
-    expect($payload['component'])->toBe('rocket/EditRecord')
+    expect($payload['component'])->toBe('rocket/edit-record')
         ->and($payload['props']['state']['name'])->toBe('Beta')
         ->and($payload['props']['state']['status'])->toBe('draft')
         ->and($payload['props']['action']['method'])->toBe('patch');

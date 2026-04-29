@@ -3,12 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Auth\GenericUser;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\TestResponse;
 use MaherElGamil\Rocket\Pages\Actions\Action;
 use MaherElGamil\Rocket\Pages\Blocks\HtmlBlock;
+use MaherElGamil\Rocket\Pages\CreateRecordPage;
+use MaherElGamil\Rocket\Pages\ListRecordsPage;
 use MaherElGamil\Rocket\Pages\ResourcePage;
 use MaherElGamil\Rocket\Panel\Panel;
 use MaherElGamil\Rocket\Panel\PanelManager;
@@ -127,7 +128,7 @@ function inertiaGetCp(string $uri): TestResponse
 it('resolves a custom resource page by slug', function () {
     $response = inertiaGetCp('/cp-admin/cp-widgets/stats')->assertOk();
 
-    expect($response->json('component'))->toBe('rocket/Page')
+    expect($response->json('component'))->toBe('rocket/page')
         ->and($response->json('props.page.title'))->toBe('Widget Stats')
         ->and($response->json('props.content.0.type'))->toBe('html');
 });
@@ -151,8 +152,8 @@ it('skips built-in keys when discovering custom pages', function () {
     $pages = ReservedSlugResource::getPages();
 
     // index/create/edit/view must still map to the built-ins, not the custom page.
-    expect($pages['index'])->toBe(MaherElGamil\Rocket\Pages\ListRecordsPage::class)
-        ->and($pages['create'])->toBe(MaherElGamil\Rocket\Pages\CreateRecordPage::class)
+    expect($pages['index'])->toBe(ListRecordsPage::class)
+        ->and($pages['create'])->toBe(CreateRecordPage::class)
         ->and($pages)->toHaveKey('stats')
         ->and($pages['stats'])->toBe(CustomStatsPage::class);
 });

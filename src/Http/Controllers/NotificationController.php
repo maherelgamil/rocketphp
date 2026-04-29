@@ -28,7 +28,7 @@ final class NotificationController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return Inertia::render('rocket/Notifications', [
+        return Inertia::render('rocket/notifications', [
             'panel' => $panel->toSharedProps(),
             'notifications' => $paginator->through(fn ($n) => $this->formatNotification($n)),
             'pagination' => [

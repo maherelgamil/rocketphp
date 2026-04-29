@@ -119,7 +119,7 @@ class ListRecordsPage extends ResourcePage
 
     public function component(): string
     {
-        return 'rocket/ListRecords';
+        return 'rocket/list-records';
     }
 
     public function can(Request $request): bool

@@ -4,20 +4,32 @@ import CreateRecord from './pages/create-record';
 import Dashboard from './pages/dashboard';
 import EditRecord from './pages/edit-record';
 import ErrorPage from './pages/error';
+import ForgotPassword from './pages/forgot-password';
 import ListRecords from './pages/list-records';
+import Login from './pages/login';
 import Notifications from './pages/notifications';
-import ViewRecord from './pages/view-record';
 import RocketPage from './pages/page';
+import Profile from './pages/profile';
+import Register from './pages/register';
+import ResetPassword from './pages/reset-password';
+import VerifyEmail from './pages/verify-email';
+import ViewRecord from './pages/view-record';
 
 const pages: Record<string, () => Promise<unknown> | unknown> = {
-    'rocket/ListRecords': () => ({ default: ListRecords }),
-    'rocket/CreateRecord': () => ({ default: CreateRecord }),
-    'rocket/EditRecord': () => ({ default: EditRecord }),
-    'rocket/ViewRecord': () => ({ default: ViewRecord }),
-    'rocket/Dashboard': () => ({ default: Dashboard }),
-    'rocket/Notifications': () => ({ default: Notifications }),
-    'rocket/Error': () => ({ default: ErrorPage }),
-    'rocket/Page': () => ({ default: RocketPage }),
+    'rocket/list-records': () => ({ default: ListRecords }),
+    'rocket/create-record': () => ({ default: CreateRecord }),
+    'rocket/edit-record': () => ({ default: EditRecord }),
+    'rocket/view-record': () => ({ default: ViewRecord }),
+    'rocket/dashboard': () => ({ default: Dashboard }),
+    'rocket/notifications': () => ({ default: Notifications }),
+    'rocket/error': () => ({ default: ErrorPage }),
+    'rocket/page': () => ({ default: RocketPage }),
+    'rocket/login': () => ({ default: Login }),
+    'rocket/register': () => ({ default: Register }),
+    'rocket/forgot-password': () => ({ default: ForgotPassword }),
+    'rocket/reset-password': () => ({ default: ResetPassword }),
+    'rocket/verify-email': () => ({ default: VerifyEmail }),
+    'rocket/profile': () => ({ default: Profile }),
 };
 
 createInertiaApp({

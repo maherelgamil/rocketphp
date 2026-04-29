@@ -80,6 +80,8 @@ Full walkthrough: [Quick Start](docs/getting-started/quick-start.md).
 - **Global search** — `Cmd+K` across resources
 - **Notifications** — bell in the header, backed by `Notification::send()`
 - **i18n + RTL** — locale switcher, JSON translations, automatic RTL
+- **Panel auth** — opt-in self-contained login, registration, password reset, email verification, and profile pages per panel
+- **Import / export** — Filament-style CSV importers and exporters, queued via batched jobs
 
 Full reference in [docs/](docs/README.md).
 

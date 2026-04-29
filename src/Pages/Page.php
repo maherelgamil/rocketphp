@@ -29,7 +29,7 @@ abstract class Page
 
     public function component(): string
     {
-        return 'rocket/Page';
+        return 'rocket/page';
     }
 
     public function getNavigationLabel(): string

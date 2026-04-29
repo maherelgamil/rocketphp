@@ -62,7 +62,7 @@ it('renders the list records page for a registered resource', function () {
     $response = inertiaGet('/test-admin/widgets')->assertOk();
     $payload = $response->json();
 
-    expect($payload['component'])->toBe('rocket/ListRecords')
+    expect($payload['component'])->toBe('rocket/list-records')
         ->and($payload['props']['resource']['slug'])->toBe('widgets')
         ->and($payload['props']['records'])->toHaveCount(3)
         ->and($payload['props']['pagination']['total'])->toBe(3);

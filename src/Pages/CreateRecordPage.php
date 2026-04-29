@@ -58,7 +58,7 @@ class CreateRecordPage extends ResourcePage
 
     public function component(): string
     {
-        return 'rocket/CreateRecord';
+        return 'rocket/create-record';
     }
 
     public function can(Request $request): bool

@@ -51,7 +51,7 @@ it('renders the ViewRecord page through the /view route', function () {
 
     $payload = inertiaGet('/test-admin/widgets/'.$widget->getKey().'/view')->json();
 
-    expect($payload['component'])->toBe('rocket/ViewRecord');
+    expect($payload['component'])->toBe('rocket/view-record');
     expect($payload['props']['record']['key'])->toBe($widget->getKey());
     expect($payload['props']['state'])->toBeArray();
     expect($payload['props']['form']['fields'])->toBeArray();

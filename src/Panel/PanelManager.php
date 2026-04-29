@@ -12,7 +12,9 @@ use MaherElGamil\Rocket\Http\Controllers\ImportController;
 use MaherElGamil\Rocket\Http\Controllers\LocaleController;
 use MaherElGamil\Rocket\Http\Controllers\NotificationController;
 use MaherElGamil\Rocket\Http\Controllers\PageController;
+use MaherElGamil\Rocket\Http\Controllers\PanelAuthController;
 use MaherElGamil\Rocket\Http\Controllers\ResourceController;
+use MaherElGamil\Rocket\Http\Middleware\Authenticate as RocketAuthenticate;
 use MaherElGamil\Rocket\Http\Middleware\HandleRocketRequests;
 use MaherElGamil\Rocket\Http\Middleware\RenderRocketErrorPages;
 
@@ -72,21 +74,35 @@ final class PanelManager
 
     private function registerRoutes(Panel $panel): void
     {
-        $middleware = array_values(array_filter(array_merge(
+        $baseMiddleware = array_values(array_filter(array_merge(
             $panel->getMiddleware(),
-            $panel->getAuthMiddleware(),
             [HandleRocketRequests::class, RenderRocketErrorPages::class],
         )));
+
+        $authedMiddleware = array_values(array_filter(array_merge(
+            $panel->getMiddleware(),
+            $this->resolveAuthMiddleware($panel),
+            [HandleRocketRequests::class, RenderRocketErrorPages::class],
+        )));
+
+        $publicAttrs = [
+            'prefix' => $panel->getPath(),
+            'as' => "rocket.{$panel->id()}.",
+            'middleware' => $baseMiddleware,
+        ];
 
         $attributes = [
             'prefix' => $panel->getPath(),
             'as' => "rocket.{$panel->id()}.",
-            'middleware' => $middleware,
+            'middleware' => $authedMiddleware,
         ];
 
         if ($panel->getDomain() !== null) {
+            $publicAttrs['domain'] = $panel->getDomain();
             $attributes['domain'] = $panel->getDomain();
         }
+
+        $this->registerAuthRoutes($panel, $publicAttrs);
 
         Route::group($attributes, function () use ($panel): void {
             $resourceConstraint = '[a-z0-9\-_]+';
@@ -241,5 +257,117 @@ final class PanelManager
 
             unset($defaults);
         });
+    }
+
+    /**
+     * Swap the framework's `auth` middleware for the panel-aware Authenticate
+     * middleware so unauthenticated requests are redirected to the panel's
+     * own login page instead of the host app's `login` named route.
+     *
+     * @return array<int, string>
+     */
+    private function resolveAuthMiddleware(Panel $panel): array
+    {
+        if (! $panel->isLoginEnabled()) {
+            return $panel->getAuthMiddleware();
+        }
+
+        return array_map(static function (string $middleware) use ($panel): string {
+            if ($middleware === 'auth') {
+                return RocketAuthenticate::class.':'.$panel->getGuard();
+            }
+
+            if (str_starts_with($middleware, 'auth:')) {
+                $guard = substr($middleware, 5);
+
+                return RocketAuthenticate::class.($guard !== '' ? ':'.$guard : '');
+            }
+
+            return $middleware;
+        }, $panel->getAuthMiddleware());
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function registerAuthRoutes(Panel $panel, array $attributes): void
+    {
+        Route::group($attributes, function () use ($panel): void {
+            if ($panel->isLoginEnabled()) {
+                Route::get('login', [PanelAuthController::class, 'showLogin'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('login');
+
+                Route::post('login', [PanelAuthController::class, 'login'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('login.attempt');
+
+                Route::post('logout', [PanelAuthController::class, 'logout'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('logout');
+            }
+
+            if ($panel->isRegistrationEnabled()) {
+                Route::get('register', [PanelAuthController::class, 'showRegister'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('register');
+
+                Route::post('register', [PanelAuthController::class, 'register'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('register.store');
+            }
+
+            if ($panel->isPasswordResetEnabled()) {
+                Route::get('forgot-password', [PanelAuthController::class, 'showForgot'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('password.request');
+
+                Route::post('forgot-password', [PanelAuthController::class, 'sendResetLink'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('password.email');
+
+                Route::get('reset-password/{token}', [PanelAuthController::class, 'showReset'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('password.reset');
+
+                Route::post('reset-password', [PanelAuthController::class, 'resetPassword'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('password.update');
+            }
+
+            if ($panel->isEmailVerificationEnabled()) {
+                Route::get('verify-email', [PanelAuthController::class, 'showVerify'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('verification.notice');
+
+                Route::get('verify-email/{id}/{hash}', [PanelAuthController::class, 'verify'])
+                    ->defaults('panelId', $panel->id())
+                    ->middleware('signed')
+                    ->name('verification.verify');
+
+                Route::post('verify-email/resend', [PanelAuthController::class, 'resendVerification'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('verification.send');
+            }
+        });
+
+        if ($panel->isProfileEnabled()) {
+            $authed = $attributes;
+            $authed['middleware'] = array_values(array_filter(array_merge(
+                $panel->getMiddleware(),
+                $this->resolveAuthMiddleware($panel),
+                [HandleRocketRequests::class, RenderRocketErrorPages::class],
+            )));
+
+            Route::group($authed, function () use ($panel): void {
+                Route::get('profile', [PanelAuthController::class, 'showProfile'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('profile.show');
+
+                Route::match(['put', 'patch'], 'profile', [PanelAuthController::class, 'updateProfile'])
+                    ->defaults('panelId', $panel->id())
+                    ->name('profile.update');
+            });
+        }
     }
 }

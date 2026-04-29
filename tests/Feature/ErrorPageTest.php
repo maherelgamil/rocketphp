@@ -39,7 +39,7 @@ it('renders a 404 Inertia error page for unknown resource slugs', function () {
 
     $response->assertStatus(404);
     expect($response->headers->get('X-Inertia'))->toBe('true');
-    expect($response->json('component'))->toBe('rocket/Error');
+    expect($response->json('component'))->toBe('rocket/error');
     expect($response->json('props.status'))->toBe(404);
 });
 
@@ -51,6 +51,6 @@ it('renders a 403 Inertia error page when a policy denies access', function () {
         ->get('/test-admin/widgets');
 
     $response->assertStatus(403);
-    expect($response->json('component'))->toBe('rocket/Error');
+    expect($response->json('component'))->toBe('rocket/error');
     expect($response->json('props.status'))->toBe(403);
 });

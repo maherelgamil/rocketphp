@@ -10,6 +10,7 @@ import NotificationBell from './notification-bell';
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -23,6 +24,7 @@ import {
     SidebarTrigger,
 } from './ui/sidebar';
 import { Toaster } from './ui/sonner';
+import UserMenu from './user-menu';
 
 type NavItem = {
     label: string;
@@ -55,6 +57,22 @@ type PanelNotifications = {
     };
 };
 
+type PanelAuth = {
+    login: boolean;
+    registration: boolean;
+    password_reset: boolean;
+    email_verification: boolean;
+    profile: boolean;
+    user?: { name: string; email: string } | null;
+    urls: {
+        login?: string | null;
+        logout?: string | null;
+        register?: string | null;
+        forgot_password?: string | null;
+        profile?: string | null;
+    };
+};
+
 type PanelProps = {
     id: string;
     brand: string;
@@ -63,6 +81,7 @@ type PanelProps = {
     global_search: GlobalSearch;
     theme?: PanelTheme;
     notifications?: PanelNotifications;
+    auth?: PanelAuth;
     dashboard_columns: number;
     sidebar_collapsed?: boolean;
     sidebar_collapsible?: boolean;
@@ -153,6 +172,16 @@ export default function PanelShell({ panel, activeSlug, children }: Props) {
                             </SidebarGroup>
                         ))}
                     </SidebarContent>
+                    {panel.auth?.user ? (
+                        <SidebarFooter>
+                            <UserMenu
+                                user={panel.auth.user}
+                                profileUrl={panel.auth.urls.profile ?? null}
+                                logoutUrl={panel.auth.urls.logout ?? null}
+                                __={__}
+                            />
+                        </SidebarFooter>
+                    ) : null}
                     <SidebarRail />
                 </Sidebar>
                 <SidebarInset>
