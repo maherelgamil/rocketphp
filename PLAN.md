@@ -242,45 +242,6 @@ Panel::make()
 
 ---
 
-## Phase 8 — Audit Log
-
-**Goal.** Opt-in per-resource change tracking using `spatie/laravel-activitylog`.
-
-### Backend
-- `Resource::auditable(): bool` — when true, Rocket records `create`, `update`, `delete` events.
-- Relation manager for the resource's own audit log on the edit / view page — scoped to the record.
-- "Who / when / what changed" diff viewer (field-level before/after).
-
-### Frontend
-- `ActivityTimelineColumn` + `ActivityDiffDialog` components.
-
-### Tests
-- Policy: users without `auditLog` permission don't see the relation manager.
-- A create + update + delete cycle produces exactly 3 log entries.
-
-### Done when
-- Demo resource shows its audit trail under an "Activity" relation manager tab.
-
----
-
-## Phase 9 — Multi-tenancy (integration surface)
-
-**Goal.** Optional `stancl/tenancy` helpers — we don't own the model, we document the two supported shapes.
-
-### Deliverables
-- `Panel::tenancy('stancl' | 'custom')` config flag.
-- Middleware wiring example: scoping Rocket panel routes to a tenant.
-- Documentation: "Panel-per-tenant" vs. "shared panel, tenant column" patterns.
-
-### Tests
-- Two fixture panels (admin + customer) with different models; ensure routes don't leak cross-tenant.
-
-### Done when
-- README section with both patterns documented end-to-end.
-- Keep the surface area minimal; this is an integration recipe, not a feature.
-
----
-
 ## Release 1.0 prep
 
 - [ ] Publish on Packagist with a smoke-test host app wired to every feature
@@ -293,11 +254,12 @@ Panel::make()
 
 ## Recommended order
 
-Phases 1–7 shipped. Remaining:
+Phases 1–7 shipped. Next focus: **Release 1.0 prep** — Packagist publish, CI matrix, bundle-size audit.
 
-8. **Audit log (Phase 8)** and **multi-tenancy (Phase 9)** — post-1.0 integration surfaces; drive by real consumer demand rather than speculation.
+### Out of core (companion packages / docs)
 
-Next focus: **Release 1.0 prep** — Packagist publish, CI matrix, bundle-size audit.
+- **Audit log** — opt-in change tracking (e.g. `spatie/laravel-activitylog` integration, diff viewer, "Activity" relation manager). Cross-cutting concern, not part of the SDUI/admin-panel contract; ship as `rocketphp/audit-log` companion package once core 1.0 lands.
+- **Multi-tenancy** — integration recipe, not a feature. Document "panel-per-tenant" vs. "shared panel, tenant column" patterns with `stancl/tenancy` in the README; ship a companion package only if a concrete consumer use case demands it.
 
 ---
 
