@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaherElGamil\Rocket\Dashboard;
 
 use Closure;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use MaherElGamil\Rocket\Support\Concerns\HasColumnSpan;
 
@@ -84,7 +85,11 @@ final class ActivityFeedWidget
             : $rows;
 
         return $collection->map(function ($row) {
-            $arr = is_array($row) ? $row : (array) $row;
+            $arr = match (true) {
+                is_array($row) => $row,
+                $row instanceof Arrayable => $row->toArray(),
+                default => (array) $row,
+            };
 
             $icon = 'activity';
             if ($this->iconColumn !== null && isset($arr[$this->iconColumn])) {

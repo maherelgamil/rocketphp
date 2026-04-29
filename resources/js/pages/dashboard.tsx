@@ -23,7 +23,7 @@ export default function Dashboard({ panel, content }: Props) {
                     {__('Overview for :brand', { brand: panel.brand })}
                 </p>
             </div>
-            <div className={gridClass(panel.dashboard_columns)}>
+            <div className={`grid gap-6 ${gridClass(panel.dashboard_columns)}`}>
                 {widgets.map((w, i) => renderWidget(w, i))}
             </div>
         </PanelShell>

@@ -31,7 +31,11 @@ function renderTable(columns: TableColumns, rows: TableRows, emptyMessage = 'No 
                     rows.map((row, ri) => (
                         <TableRow key={ri}>
                             {columns.map((c) => (
-                                <TableCell key={c.name}>{String(row[c.name] ?? '—')}</TableCell>
+                                <TableCell key={c.name}>
+                                    <div className="max-w-[240px] truncate">
+                                        {String(row[c.name] ?? '—')}
+                                    </div>
+                                </TableCell>
                             ))}
                         </TableRow>
                     ))
