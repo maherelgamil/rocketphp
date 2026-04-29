@@ -16,6 +16,10 @@ abstract class Column
 
     protected bool $searchable = false;
 
+    protected bool $toggleable = false;
+
+    protected bool $toggledHiddenByDefault = false;
+
     protected ?Closure $formatStateUsing = null;
 
     final public function __construct(protected readonly string $name) {}
@@ -61,6 +65,32 @@ abstract class Column
         return $this;
     }
 
+    public function toggleable(bool $toggleable = true, bool $isToggledHiddenByDefault = false): static
+    {
+        $this->toggleable = $toggleable;
+        $this->toggledHiddenByDefault = $isToggledHiddenByDefault;
+
+        return $this;
+    }
+
+    public function toggledHiddenByDefault(bool $hidden = true): static
+    {
+        $this->toggleable = true;
+        $this->toggledHiddenByDefault = $hidden;
+
+        return $this;
+    }
+
+    public function isToggleable(): bool
+    {
+        return $this->toggleable;
+    }
+
+    public function isToggledHiddenByDefault(): bool
+    {
+        return $this->toggledHiddenByDefault;
+    }
+
     public function formatStateUsing(Closure $callback): static
     {
         $this->formatStateUsing = $callback;
@@ -96,6 +126,8 @@ abstract class Column
             'name' => $this->name,
             'label' => $this->getLabel(),
             'sortable' => $this->sortable,
+            'toggleable' => $this->toggleable,
+            'toggled_hidden_by_default' => $this->toggledHiddenByDefault,
             'extra' => $this->extraProps(),
         ];
     }

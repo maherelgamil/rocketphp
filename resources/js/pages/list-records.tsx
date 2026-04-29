@@ -321,6 +321,7 @@ export default function ListRecords({
                 bulkActions={bulk_actions}
                 tableFilters={table_filters as Parameters<typeof DataTable>[0]['tableFilters']}
                 perPageOptions={per_page_options}
+                __={__}
             />
         </PanelShell>
     );

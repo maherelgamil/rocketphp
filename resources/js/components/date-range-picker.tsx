@@ -96,7 +96,7 @@ export function DateRangePicker({ from, until, onChange, label, className }: Dat
                     <Button
                         variant="outline"
                         className={cn(
-                            'h-9 w-[260px] justify-start text-left font-normal',
+                            'h-8 w-full justify-start text-left font-normal',
                             !range && 'text-muted-foreground',
                         )}
                     >

@@ -1,8 +1,5 @@
 import { Link, router } from '@inertiajs/react';
 import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
     Check,
     ChevronLeft,
     ChevronRight,
@@ -17,9 +14,11 @@ import {
     X,
 } from 'lucide-react';
 import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ConfirmDialog from './confirm-dialog';
-import { DateRangePicker } from './date-range-picker';
+import DataTableColumnHeader from './data-table-column-header';
+import DataTableViewOptions from './data-table-view-options';
+import TableFilters, { type FiltersLayoutSchema, type TableFilterSchema as TFSchema } from './table-filters';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -51,6 +50,8 @@ type Column = {
     name: string;
     label: string;
     sortable: boolean;
+    toggleable?: boolean;
+    toggled_hidden_by_default?: boolean;
     extra: Record<string, unknown>;
 };
 
@@ -62,6 +63,7 @@ type Schema = {
     default_sort: string | null;
     default_sort_direction: 'asc' | 'desc';
     pagination_style?: PaginationStyle;
+    filters_layout?: FiltersLayoutSchema;
 };
 
 type Row = Record<string, unknown> & { _key: string | number };
@@ -113,39 +115,7 @@ type RowActionSchema = {
     ability?: string | null;
 };
 
-type TableFilterSchema =
-    | {
-          type: 'select';
-          name: string;
-          query_key: string;
-          label: string;
-          options: Record<string, string>;
-          value: string | string[] | null | undefined;
-      }
-    | {
-          type: 'ternary';
-          name: string;
-          query_key: string;
-          label: string;
-          value: string | string[] | null | undefined;
-      }
-    | {
-          type: 'date_range';
-          name: string;
-          label: string;
-          from_key: string;
-          until_key: string;
-          from: string | string[] | null | undefined;
-          until: string | string[] | null | undefined;
-      }
-    | {
-          type: 'trashed';
-          name: string;
-          query_key: string;
-          label: string;
-          options: Record<string, string>;
-          value: string | string[] | null | undefined;
-      };
+type TableFilterSchema = TFSchema;
 
 type Props = {
     schema: Schema;
@@ -186,10 +156,21 @@ export default function DataTable({
     tableFilters = [],
     perPageOptions = [10, 25, 50, 100],
     paramPrefix = '',
-    __ = (key) => key,
+    __ = (key, replacements) => {
+        let str = key;
+        if (replacements) {
+            const entries = Object.entries(replacements).sort(
+                ([a], [b]) => b.length - a.length,
+            );
+            for (const [k, v] of entries) {
+                str = str.replaceAll(`:${k}`, String(v));
+            }
+        }
+        return str;
+    },
 }: Props) {
     const prefixKey = (k: string) => (paramPrefix ? paramPrefix + k : k);
-    const coreKeys = new Set(['page', 'search', 'sort', 'direction', 'per_page']);
+    const coreKeys = new Set(['page', 'search', 'sort', 'direction', 'per_page', 'hidden']);
     const hasBulk = bulkActions.length > 0;
     const [selected, setSelected] = useState<Set<string>>(() => new Set());
     const [search, setSearch] = useState(filters.search);
@@ -199,11 +180,24 @@ export default function DataTable({
         row?: Row;
     } | null>(null);
 
+    const perPageStorageKey = `rocket.per_page:${baseUrl}${paramPrefix ? `:${paramPrefix}` : ''}`;
+
     const navigate = (patch: Record<string, unknown> & { page?: number }) => {
+        if (typeof patch.per_page === 'number' && typeof window !== 'undefined') {
+            try {
+                window.localStorage.setItem(perPageStorageKey, String(patch.per_page));
+            } catch {
+                // ignore storage failures (private mode, quota)
+            }
+        }
         const next: Record<string, unknown> = { ...query };
         for (const [k, v] of Object.entries(patch)) {
             const key = coreKeys.has(k) ? prefixKey(k) : k;
-            next[key] = v;
+            if (v === undefined || v === '') {
+                delete next[key];
+            } else {
+                next[key] = v;
+            }
         }
         if (patch.page === undefined) {
             next[prefixKey('page')] = 1;
@@ -211,29 +205,119 @@ export default function DataTable({
         router.get(baseUrl, next, { preserveState: true, preserveScroll: true, replace: true });
     };
 
-    const toggleSort = (column: Column) => {
-        if (!column.sortable) return;
-        const nextDirection: 'asc' | 'desc' =
-            filters.sort === column.name && filters.direction === 'asc' ? 'desc' : 'asc';
-        navigate({ sort: column.name, direction: nextDirection });
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (query[prefixKey('per_page')] !== undefined) return;
+        let stored: string | null = null;
+        try {
+            stored = window.localStorage.getItem(perPageStorageKey);
+        } catch {
+            return;
+        }
+        if (!stored) return;
+        const n = Number(stored);
+        if (!Number.isFinite(n) || n <= 0) return;
+        if (!perPageOptions.includes(n)) return;
+        if (n === pagination.per_page) return;
+        navigate({ per_page: n });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const hiddenKey = prefixKey('hidden');
+    const hiddenFromUrl = qString(query[hiddenKey]);
+    const defaultHidden = useMemo(
+        () => schema.columns.filter((c) => c.toggled_hidden_by_default).map((c) => c.name),
+        [schema.columns],
+    );
+    const hiddenColumns = useMemo<Set<string>>(() => {
+        if (hiddenFromUrl === '') {
+            return new Set(defaultHidden);
+        }
+        if (hiddenFromUrl === '-') {
+            return new Set();
+        }
+        return new Set(hiddenFromUrl.split(',').filter(Boolean));
+    }, [hiddenFromUrl, defaultHidden]);
+
+    const toggleableColumns = useMemo(
+        () =>
+            schema.columns
+                .filter((c) => c.toggleable)
+                .map((c) => ({ name: c.name, label: c.label, visible: !hiddenColumns.has(c.name) })),
+        [schema.columns, hiddenColumns],
+    );
+
+    const visibleColumns = useMemo(
+        () => schema.columns.filter((c) => !hiddenColumns.has(c.name)),
+        [schema.columns, hiddenColumns],
+    );
+
+    const toggleColumnVisibility = (name: string, visible: boolean) => {
+        const next = new Set(hiddenColumns);
+        if (visible) next.delete(name);
+        else next.add(name);
+        const arr = Array.from(next);
+        const sameAsDefault =
+            arr.length === defaultHidden.length && arr.every((n) => defaultHidden.includes(n));
+        navigate({ hidden: sameAsDefault ? '' : arr.length === 0 ? '-' : arr.join(',') });
     };
 
-    const sortIcon = (column: Column) => {
-        if (!column.sortable) return null;
-        if (filters.sort !== column.name) {
-            return <ArrowUpDown className="ms-2 size-3.5 opacity-40" />;
-        }
-        return filters.direction === 'asc' ? (
-            <ArrowUp className="ms-2 size-3.5" />
-        ) : (
-            <ArrowDown className="ms-2 size-3.5" />
-        );
+    const setSort = (column: Column, direction: 'asc' | 'desc') => {
+        if (!column.sortable) return;
+        navigate({ sort: column.name, direction });
     };
+
+    const layoutKind = schema.filters_layout?.layout ?? 'dropdown';
+    const isDropdownLayout = layoutKind === 'dropdown';
+    const filtersAbove = !isDropdownLayout && layoutKind !== 'below_content';
+
+    type Indicator = { label: string; clear_keys: string[] };
+    const allIndicators: Indicator[] = isDropdownLayout
+        ? tableFilters.flatMap((f) => (f as { active_indicators?: Indicator[] }).active_indicators ?? [])
+        : [];
+
+    const clearIndicatorKeys = (keys: string[]) => {
+        const next: Record<string, unknown> = { ...query };
+        for (const key of keys) {
+            if (!key.includes('.')) {
+                delete next[key];
+                continue;
+            }
+            const parts = key.split('.');
+            let cursor = next;
+            const trail: Array<{ obj: Record<string, unknown>; key: string }> = [];
+            let valid = true;
+            for (let i = 0; i < parts.length - 1; i++) {
+                const k = parts[i];
+                const child = cursor[k];
+                if (!child || typeof child !== 'object' || Array.isArray(child)) {
+                    valid = false;
+                    break;
+                }
+                const fresh = { ...(child as Record<string, unknown>) };
+                cursor[k] = fresh;
+                trail.push({ obj: cursor, key: k });
+                cursor = fresh;
+            }
+            if (!valid) continue;
+            delete cursor[parts[parts.length - 1]];
+            for (let i = trail.length - 1; i >= 0; i--) {
+                const { obj, key: k } = trail[i];
+                const child = obj[k] as Record<string, unknown>;
+                if (Object.keys(child).length === 0) delete obj[k];
+            }
+        }
+        next[prefixKey('page')] = 1;
+        router.get(baseUrl, next, { preserveState: true, preserveScroll: true, replace: true });
+    };
+
+    const clearAllIndicators = () =>
+        clearIndicatorKeys(allIndicators.flatMap((i) => i.clear_keys));
 
     const selectionColumn = hasBulk ? 1 : 0;
     const actionColumn =
         (editable ? 1 : 0) + (rowActions.filter((a) => a.scope === 'row').length > 0 ? 1 : 0);
-    const totalColumns = schema.columns.length + selectionColumn + actionColumn;
+    const totalColumns = visibleColumns.length + selectionColumn + actionColumn;
 
     const allIds = useMemo(() => records.map((r) => String(r._key)), [records]);
     const allSelected = hasBulk && records.length > 0 && selected.size === records.length;
@@ -273,103 +357,21 @@ export default function DataTable({
 
     const bulkDelete = bulkActions.find((a) => a.name === 'bulk-delete');
 
+    const filtersBlock = tableFilters.length > 0 && (
+        <TableFilters
+            filters={tableFilters as TFSchema[]}
+            layout={schema.filters_layout}
+            query={query}
+            baseUrl={baseUrl}
+            paramPrefix={paramPrefix}
+            hideIndicators={isDropdownLayout}
+            __={__}
+        />
+    );
+
     return (
         <div className="space-y-4">
-            {tableFilters.length > 0 && (
-                <div className="flex flex-wrap items-end gap-3">
-                    {tableFilters.map((f) => {
-                        if (f.type === 'select') {
-                            return (
-                                <div key={f.name} className="space-y-1">
-                                    <label className="text-xs font-medium text-muted-foreground">
-                                        {f.label}
-                                    </label>
-                                    <Select
-                                        value={qString(f.value) || '__all__'}
-                                        onValueChange={(v) =>
-                                            navigate({
-                                                [f.query_key]: v === '__all__' ? '' : v,
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger className="h-9 w-[180px]">
-                                            <SelectValue placeholder={__('All')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="__all__">{__('All')}</SelectItem>
-                                            {Object.entries(f.options).map(([k, label]) => (
-                                                <SelectItem key={k} value={k}>
-                                                    {label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            );
-                        }
-                        if (f.type === 'ternary') {
-                            return (
-                                <div key={f.name} className="space-y-1">
-                                    <label className="text-xs font-medium text-muted-foreground">
-                                        {f.label}
-                                    </label>
-                                    <Select
-                                        value={qString(f.value) || 'all'}
-                                        onValueChange={(v) => navigate({ [f.query_key]: v === 'all' ? '' : v })}
-                                    >
-                                        <SelectTrigger className="h-9 w-[160px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">{__('All')}</SelectItem>
-                                            <SelectItem value="yes">{__('Yes')}</SelectItem>
-                                            <SelectItem value="no">{__('No')}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            );
-                        }
-                        if (f.type === 'trashed') {
-                            return (
-                                <div key={f.name} className="space-y-1">
-                                    <label className="text-xs font-medium text-muted-foreground">
-                                        {f.label}
-                                    </label>
-                                    <Select
-                                        value={qString(f.value) || 'without'}
-                                        onValueChange={(v) => navigate({ [f.query_key]: v })}
-                                    >
-                                        <SelectTrigger className="h-9 w-[200px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(f.options).map(([k, label]) => (
-                                                <SelectItem key={k} value={k}>
-                                                    {label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            );
-                        }
-                        if (f.type === 'date_range') {
-                            return (
-                                <DateRangePicker
-                                    key={f.name}
-                                    label={f.label}
-                                    from={qString(f.from)}
-                                    until={qString(f.until)}
-                                    onChange={(from, until) =>
-                                        navigate({ [f.from_key]: from, [f.until_key]: until })
-                                    }
-                                />
-                            );
-                        }
-                        return null;
-                    })}
-                </div>
-            )}
+            {filtersAbove && filtersBlock}
 
             <div className="flex flex-wrap items-center gap-4">
                 {schema.searchable && (
@@ -387,32 +389,75 @@ export default function DataTable({
                                 placeholder={__('Search...')}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="ps-9"
+                                className="h-8 ps-9"
                             />
                         </div>
-                        <Button type="submit" size="sm" variant="secondary">
+                        <Button type="submit" variant="secondary">
                             {__('Search')}
                         </Button>
                     </form>
                 )}
 
+                <div className="ms-auto flex items-center gap-2">
+                    {isDropdownLayout && tableFilters.length > 0 && filtersBlock}
+                    {toggleableColumns.length > 0 && (
+                        <DataTableViewOptions
+                            columns={toggleableColumns}
+                            onToggle={toggleColumnVisibility}
+                            __={__}
+                        />
+                    )}
+                </div>
             </div>
 
-            {hasBulk && bulkDelete && selected.size > 0 && (
-                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
-                    <span className="text-muted-foreground">{selected.size} selected</span>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={() =>
-                            bulkDelete.requires_confirmation
-                                ? setConfirmAction({ kind: 'bulk', action: bulkDelete })
-                                : submitBulkAction(bulkDelete)
-                        }
-                    >
-                        {bulkDelete.label}
-                    </Button>
+            {((hasBulk && bulkDelete && selected.size > 0) || allIndicators.length > 0) && (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                    {hasBulk && bulkDelete && selected.size > 0 && (
+                        <>
+                            <span className="text-muted-foreground">
+                                {__(':count selected', { count: selected.size })}
+                            </span>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                    bulkDelete.requires_confirmation
+                                        ? setConfirmAction({ kind: 'bulk', action: bulkDelete })
+                                        : submitBulkAction(bulkDelete)
+                                }
+                            >
+                                {bulkDelete.label}
+                            </Button>
+                            {allIndicators.length > 0 && (
+                                <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+                            )}
+                        </>
+                    )}
+                    {allIndicators.map((ind, idx) => (
+                        <Badge key={idx} variant="secondary" className="gap-1 pe-1">
+                            <span>{ind.label}</span>
+                            <button
+                                type="button"
+                                onClick={() => clearIndicatorKeys(ind.clear_keys)}
+                                className="rounded hover:bg-muted-foreground/20"
+                                aria-label={__('Remove filter')}
+                            >
+                                <X className="size-3" />
+                            </button>
+                        </Badge>
+                    ))}
+                    {allIndicators.length > 0 && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={clearAllIndicators}
+                            className="ms-auto"
+                        >
+                            {__('Reset all')}
+                        </Button>
+                    )}
                 </div>
             )}
 
@@ -431,16 +476,23 @@ export default function DataTable({
                                     />
                                 </TableHead>
                             )}
-                            {schema.columns.map((col) => (
-                                <TableHead
-                                    key={col.name}
-                                    onClick={() => toggleSort(col)}
-                                    className={col.sortable ? 'cursor-pointer select-none' : ''}
-                                >
-                                    <span className="inline-flex items-center">
-                                        {col.label}
-                                        {sortIcon(col)}
-                                    </span>
+                            {visibleColumns.map((col) => (
+                                <TableHead key={col.name}>
+                                    <DataTableColumnHeader
+                                        label={col.label}
+                                        name={col.name}
+                                        sortable={col.sortable}
+                                        toggleable={Boolean(col.toggleable)}
+                                        activeSort={filters.sort || null}
+                                        activeDirection={filters.direction}
+                                        onSort={(direction) => setSort(col, direction)}
+                                        onHide={
+                                            col.toggleable
+                                                ? () => toggleColumnVisibility(col.name, false)
+                                                : undefined
+                                        }
+                                        __={__}
+                                    />
                                 </TableHead>
                             ))}
                             {(editable || rowActions.length > 0) && (
@@ -472,7 +524,7 @@ export default function DataTable({
                                             />
                                         </TableCell>
                                     )}
-                                    {schema.columns.map((col) => (
+                                    {visibleColumns.map((col) => (
                                         <TableCell key={col.name}>
                                             {renderCell(col, row[col.name], __)}
                                         </TableCell>
@@ -556,6 +608,8 @@ export default function DataTable({
                     __={__}
                 />
             </Card>
+
+            {layoutKind === 'below_content' && filtersBlock}
 
             <ConfirmDialog
                 open={confirmAction !== null}
@@ -939,8 +993,8 @@ function NumberedPager({
                         key={p}
                         type="button"
                         variant={p === current ? 'default' : 'outline'}
-                        size="icon-xs"
-                        className="size-8 tabular-nums"
+                        size="sm"
+                        className="h-8 min-w-8 px-2 tabular-nums"
                         onClick={() => onGoto(p)}
                         aria-current={p === current ? 'page' : undefined}
                         aria-label={__('Go to page :page', { page: p })}

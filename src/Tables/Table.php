@@ -12,6 +12,7 @@ use MaherElGamil\Rocket\Tables\Actions\BulkAction;
 use MaherElGamil\Rocket\Tables\Actions\HeaderAction;
 use MaherElGamil\Rocket\Tables\Columns\Column;
 use MaherElGamil\Rocket\Tables\Filters\Filter;
+use MaherElGamil\Rocket\Tables\Filters\FiltersLayout;
 
 final class Table
 {
@@ -40,6 +41,16 @@ final class Table
     private int $actionsOverflowAfter = 3;
 
     private ?string $paginationStyle = null;
+
+    private FiltersLayout $filtersLayout = FiltersLayout::Dropdown;
+
+    private int $filtersFormColumns = 1;
+
+    private string $filtersFormWidth = 'sm';
+
+    private bool $deferFilters = false;
+
+    private ?string $filtersTriggerLabel = null;
 
     /**
      * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resource
@@ -178,6 +189,63 @@ final class Table
         return $this;
     }
 
+    public function filtersLayout(FiltersLayout $layout): self
+    {
+        $this->filtersLayout = $layout;
+
+        return $this;
+    }
+
+    public function getFiltersLayout(): FiltersLayout
+    {
+        return $this->filtersLayout;
+    }
+
+    public function filtersFormColumns(int $columns): self
+    {
+        $this->filtersFormColumns = max(1, min(4, $columns));
+
+        return $this;
+    }
+
+    public function filtersFormWidth(string $width): self
+    {
+        $this->filtersFormWidth = in_array($width, ['sm', 'md', 'lg', 'xl'], true) ? $width : 'sm';
+
+        return $this;
+    }
+
+    public function deferFilters(bool $defer = true): self
+    {
+        $this->deferFilters = $defer;
+
+        return $this;
+    }
+
+    public function filtersTriggerLabel(string $label): self
+    {
+        $this->filtersTriggerLabel = $label;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function filtersLayoutToArray(): array
+    {
+        $layout = $this->filtersLayout->value;
+        $defaultDeferred = in_array($layout, ['dropdown', 'left_sidebar', 'right_sidebar'], true);
+
+        return [
+            'layout' => $layout,
+            'columns' => $this->filtersFormColumns,
+            'width' => $this->filtersFormWidth,
+            'defer' => $this->deferFilters || $defaultDeferred,
+            'trigger_label' => $this->filtersTriggerLabel,
+        ];
+    }
+
     public function getPaginationStyle(): string
     {
         if ($this->paginationStyle !== null) {
@@ -288,6 +356,7 @@ final class Table
             'default_sort' => $this->defaultSort,
             'default_sort_direction' => $this->defaultSortDirection,
             'pagination_style' => $this->getPaginationStyle(),
+            'filters_layout' => $this->filtersLayoutToArray(),
         ];
     }
 }

@@ -5,7 +5,10 @@ export function create__(translations: Record<string, string>): Translator {
         let str = translations[key] ?? key;
 
         if (replacements) {
-            for (const [k, v] of Object.entries(replacements)) {
+            const entries = Object.entries(replacements).sort(
+                ([a], [b]) => b.length - a.length,
+            );
+            for (const [k, v] of entries) {
                 str = str.replaceAll(`:${k}`, String(v));
             }
         }
