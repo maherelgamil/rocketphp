@@ -72,13 +72,14 @@ Full walkthrough: [Quick Start](docs/getting-started/quick-start.md).
 
 - **Resources** — auto-generated list, create, edit, view pages
 - **Tables** — columns, filters, row + bulk actions, pagination, search
-- **Forms** — 15 field types, layout grouping, server-side validation
+- **Forms** — 12 field types, layout grouping (Section / Tabs), server-side validation
 - **Widgets** — stats, charts, tables, recent records, activity feeds
 - **Relation managers** — manage related records inline on edit/view
 - **Custom pages** — drop a class in `Pages/`, it's auto-discovered
 - **Authorization** — policy-gated at every level (nav, page, action)
 - **Global search** — `Cmd+K` across resources
 - **Notifications** — bell in the header, backed by `Notification::send()`
+- **Theming** — primary/accent color, font, radius, density per panel
 - **i18n + RTL** — locale switcher, JSON translations, automatic RTL
 - **Panel auth** — opt-in self-contained login, registration, password reset, email verification, and profile pages per panel
 - **Import / export** — Filament-style CSV importers and exporters, queued via batched jobs

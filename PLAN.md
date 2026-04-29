@@ -79,7 +79,7 @@ A Filament-style admin panel framework for **Inertia.js + React**.
 
 ### Testing
 - Pest feature tests across every surface: resources, forms, auth, actions, filters, dashboard, enum support, `Color` tokens, `BelongsTo` (+ AJAX lookup), `BelongsToMany`, `Section`, `Tabs`, `KeyValue`, all column types, all formatters, relation managers (scoping, namespacing, policies, layout, default per_page)
-- **245 tests / 555 assertions**, all green
+- **278 tests / 630 assertions**, all green
 
 ---
 
@@ -248,7 +248,12 @@ Panel::make()
 - [ ] README + CHANGELOG kept in sync with every public-API change
 - [ ] SemVer git tags on all releases; document breaking changes
 - [ ] CI pipeline: matrix over Laravel 11 / 12 / 13 and PHP 8.2 / 8.3 / 8.4
-- [ ] Frontend bundle size audit — re-measure `rocket.js` post shadcn sidebar migration; watch for regressions. Recharts (Phase 4) is already lazy-loaded.
+- [x] Frontend bundle size audit — baseline recorded against the demo host app (`rocket-demo`, `npm run build`):
+  - **Main `rocket.js` chunk:** 747.44 kB raw / **212.20 kB gzip**
+  - **`chart-widget-inner` (Recharts):** 374.54 kB / 108.35 kB gzip — confirmed lazy-loaded
+  - Lucide icons split per-icon via `lucide-react/dynamic` (hundreds of sub-1 kB chunks) — confirmed.
+  - Follow-up code-split candidates (post-1.0): `react-day-picker` (DatePicker / DateRangeFilter), `cmdk` (⌘K palette), auth pages (login / register / reset / verify).
+  - Treemap (`rollup-plugin-visualizer`) deferred until a regression motivates it.
 
 ---
 
