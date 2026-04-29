@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Filter as FilterIcon, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Filter as FilterIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import { DateRangePicker } from './date-range-picker';
 import FormField, { type FieldSchema } from './form-field';
@@ -51,6 +51,7 @@ export type TableFilterSchema =
           label: string;
           options: Record<string, string>;
           value: string | string[] | null | undefined;
+          multiple?: boolean;
           visible_in_dropdown?: boolean;
           active_indicators?: Indicator[];
       }
@@ -318,6 +319,95 @@ export default function TableFilters({
     return inner;
 }
 
+function FacetedSelect({
+    label,
+    options,
+    selected,
+    onToggle,
+    onClear,
+    __,
+}: {
+    label: string;
+    options: Record<string, string>;
+    selected: string[];
+    onToggle: (key: string) => void;
+    onClear: () => void;
+    __: (key: string, replacements?: Record<string, string | number>) => string;
+}) {
+    const count = selected.length;
+    const trigger = (() => {
+        if (count === 0) return __('All');
+        if (count <= 2) {
+            return selected.map((k) => options[k] ?? k).join(', ');
+        }
+        return __(':count selected', { count });
+    })();
+
+    return (
+        <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">{label}</label>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 w-full justify-between font-normal"
+                    >
+                        <span className="flex min-w-0 items-center gap-1.5">
+                            {count > 0 && (
+                                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                                    {count}
+                                </Badge>
+                            )}
+                            <span className="truncate">{trigger}</span>
+                        </span>
+                        <ChevronDown className="size-3.5 opacity-60" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-56 p-0">
+                    <div className="max-h-64 overflow-y-auto p-1">
+                        {Object.entries(options).map(([k, optLabel]) => {
+                            const checked = selected.includes(k);
+                            return (
+                                <button
+                                    key={k}
+                                    type="button"
+                                    onClick={() => onToggle(k)}
+                                    className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                >
+                                    <span
+                                        className={
+                                            'flex size-4 items-center justify-center rounded-sm border ' +
+                                            (checked
+                                                ? 'border-primary bg-primary text-primary-foreground'
+                                                : 'border-input')
+                                        }
+                                    >
+                                        {checked && <Check className="size-3" />}
+                                    </span>
+                                    <span className="flex-1 truncate text-start">{optLabel}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {count > 0 && (
+                        <div className="border-t p-1">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={onClear}
+                                className="h-8 w-full justify-center text-xs"
+                            >
+                                {__('Clear')}
+                            </Button>
+                        </div>
+                    )}
+                </PopoverContent>
+            </Popover>
+        </div>
+    );
+}
+
 function popoverWidth(w: 'sm' | 'md' | 'lg' | 'xl'): string {
     return {
         sm: 'w-80',
@@ -367,6 +457,35 @@ function renderFilter(
     const pendingFor = (path: string) => (path in pending ? pending[path] : undefined);
 
     if (f.type === 'select') {
+        if (f.multiple) {
+            const pending = pendingFor(f.state_key);
+            const raw = pending !== undefined ? pending : f.value;
+            const current: string[] = Array.isArray(raw)
+                ? raw.map(String)
+                : raw !== null && raw !== undefined && raw !== ''
+                  ? [String(raw)]
+                  : [];
+
+            const toggle = (key: string) => {
+                const next = current.includes(key)
+                    ? current.filter((v) => v !== key)
+                    : [...current, key];
+                stage(f.state_key, next.length === 0 ? null : next);
+            };
+
+            return (
+                <FacetedSelect
+                    key={f.name}
+                    label={f.label}
+                    options={f.options}
+                    selected={current}
+                    onToggle={toggle}
+                    onClear={() => stage(f.state_key, null)}
+                    __={__}
+                />
+            );
+        }
+
         const current = pendingFor(f.state_key) ?? f.value;
         return (
             <div key={f.name} className="space-y-1">
