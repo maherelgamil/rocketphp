@@ -81,6 +81,9 @@ return [
         'min_per_page' => 1,
         'max_per_page' => 100,
         'per_page_options' => [5, 10, 25, 50, 100],
+        // Footer pagination style: 'simple' (prev/next only), 'numbered'
+        // (page numbers + jump-to-page input), or 'compact' ("Page X of Y").
+        'style' => 'numbered',
         'relation_manager' => [
             'per_page' => 5,
         ],

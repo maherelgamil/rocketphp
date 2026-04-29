@@ -39,6 +39,8 @@ final class Table
 
     private int $actionsOverflowAfter = 3;
 
+    private ?string $paginationStyle = null;
+
     /**
      * @param  class-string<\MaherElGamil\Rocket\Resources\Resource>  $resource
      */
@@ -167,6 +169,28 @@ final class Table
         return $this->actionsOverflowAfter;
     }
 
+    public function paginationStyle(string $style): self
+    {
+        $this->paginationStyle = in_array($style, ['simple', 'numbered', 'compact'], true)
+            ? $style
+            : null;
+
+        return $this;
+    }
+
+    public function getPaginationStyle(): string
+    {
+        if ($this->paginationStyle !== null) {
+            return $this->paginationStyle;
+        }
+
+        $configured = (string) config('rocket.pagination.style', 'numbered');
+
+        return in_array($configured, ['simple', 'numbered', 'compact'], true)
+            ? $configured
+            : 'numbered';
+    }
+
     public function getRowAction(string $name): ?Action
     {
         return $this->rowActions[$name] ?? null;
@@ -263,6 +287,7 @@ final class Table
             'searchable' => $this->searchable !== [],
             'default_sort' => $this->defaultSort,
             'default_sort_direction' => $this->defaultSortDirection,
+            'pagination_style' => $this->getPaginationStyle(),
         ];
     }
 }

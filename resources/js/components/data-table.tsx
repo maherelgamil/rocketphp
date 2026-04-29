@@ -4,6 +4,10 @@ import {
     ArrowUp,
     ArrowUpDown,
     Check,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
     Copy,
     Eye,
     MoreHorizontal,
@@ -50,11 +54,14 @@ type Column = {
     extra: Record<string, unknown>;
 };
 
+type PaginationStyle = 'simple' | 'numbered' | 'compact';
+
 type Schema = {
     columns: Column[];
     searchable: boolean;
     default_sort: string | null;
     default_sort_direction: 'asc' | 'desc';
+    pagination_style?: PaginationStyle;
 };
 
 type Row = Record<string, unknown> & { _key: string | number };
@@ -389,24 +396,6 @@ export default function DataTable({
                     </form>
                 )}
 
-                <div className="ml-auto flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{__('Per page')}</span>
-                    <Select
-                        value={String(filters.per_page)}
-                        onValueChange={(v) => navigate({ per_page: Number(v) })}
-                    >
-                        <SelectTrigger className="h-9 w-[88px]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {perPageOptions.map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                    {n}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
             </div>
 
             {hasBulk && bulkDelete && selected.size > 0 && (
@@ -558,31 +547,14 @@ export default function DataTable({
                     </TableBody>
                 </Table>
 
-                <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
-                    <span>
-                        {pagination.from ?? 0}–{pagination.to ?? 0} of {pagination.total}
-                    </span>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={pagination.current_page <= 1}
-                            onClick={() => navigate({ page: pagination.current_page - 1 })}
-                        >
-                            {__('Previous')}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={pagination.current_page >= pagination.last_page}
-                            onClick={() => navigate({ page: pagination.current_page + 1 })}
-                        >
-                            {__('Next')}
-                        </Button>
-                    </div>
-                </div>
+                <TableFooter
+                    pagination={pagination}
+                    perPage={filters.per_page}
+                    perPageOptions={perPageOptions}
+                    style={schema.pagination_style ?? 'numbered'}
+                    onNavigate={navigate}
+                    __={__}
+                />
             </Card>
 
             <ConfirmDialog
@@ -761,6 +733,275 @@ function renderRowActionButton(
             <Icon className="size-4" />
         </Button>
     );
+}
+
+function TableFooter({
+    pagination,
+    perPage,
+    perPageOptions,
+    style,
+    onNavigate,
+    __,
+}: {
+    pagination: Pagination;
+    perPage: number;
+    perPageOptions: number[];
+    style: PaginationStyle;
+    onNavigate: (patch: Record<string, unknown> & { page?: number }) => void;
+    __: (key: string, replacements?: Record<string, string | number>) => string;
+}) {
+    const current = pagination.current_page;
+    const last = Math.max(1, pagination.last_page);
+    const goto = (page: number) => {
+        const clamped = Math.max(1, Math.min(last, page));
+        if (clamped !== current) onNavigate({ page: clamped });
+    };
+
+    return (
+        <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+                <span className="whitespace-nowrap">
+                    {__('Showing :from–:to of :total', {
+                        from: pagination.from ?? 0,
+                        to: pagination.to ?? 0,
+                        total: pagination.total,
+                    })}
+                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs">{__('Per page')}</span>
+                    <Select
+                        value={String(perPage)}
+                        onValueChange={(v) => onNavigate({ per_page: Number(v) })}
+                    >
+                        <SelectTrigger className="h-8 w-[80px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {perPageOptions.map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                    {n}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+                {style === 'simple' && (
+                    <SimplePager current={current} last={last} onGoto={goto} __={__} />
+                )}
+                {style === 'compact' && (
+                    <CompactPager current={current} last={last} onGoto={goto} __={__} />
+                )}
+                {style === 'numbered' && (
+                    <NumberedPager current={current} last={last} onGoto={goto} __={__} />
+                )}
+            </div>
+        </div>
+    );
+}
+
+function SimplePager({
+    current,
+    last,
+    onGoto,
+    __,
+}: {
+    current: number;
+    last: number;
+    onGoto: (page: number) => void;
+    __: (key: string) => string;
+}) {
+    return (
+        <>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={current <= 1}
+                onClick={() => onGoto(current - 1)}
+            >
+                {__('Previous')}
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={current >= last}
+                onClick={() => onGoto(current + 1)}
+            >
+                {__('Next')}
+            </Button>
+        </>
+    );
+}
+
+function CompactPager({
+    current,
+    last,
+    onGoto,
+    __,
+}: {
+    current: number;
+    last: number;
+    onGoto: (page: number) => void;
+    __: (key: string, replacements?: Record<string, string | number>) => string;
+}) {
+    return (
+        <>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="size-8"
+                disabled={current <= 1}
+                onClick={() => onGoto(1)}
+                aria-label={__('First page')}
+            >
+                <ChevronsLeft className="size-4" />
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="size-8"
+                disabled={current <= 1}
+                onClick={() => onGoto(current - 1)}
+                aria-label={__('Previous page')}
+            >
+                <ChevronLeft className="size-4" />
+            </Button>
+            <span className="px-2 tabular-nums text-foreground">
+                {__('Page :current of :last', { current, last })}
+            </span>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="size-8"
+                disabled={current >= last}
+                onClick={() => onGoto(current + 1)}
+                aria-label={__('Next page')}
+            >
+                <ChevronRight className="size-4" />
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="size-8"
+                disabled={current >= last}
+                onClick={() => onGoto(last)}
+                aria-label={__('Last page')}
+            >
+                <ChevronsRight className="size-4" />
+            </Button>
+        </>
+    );
+}
+
+function NumberedPager({
+    current,
+    last,
+    onGoto,
+    __,
+}: {
+    current: number;
+    last: number;
+    onGoto: (page: number) => void;
+    __: (key: string, replacements?: Record<string, string | number>) => string;
+}) {
+    const [jump, setJump] = useState('');
+    const pages = pageWindow(current, last);
+
+    return (
+        <>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="size-8"
+                disabled={current <= 1}
+                onClick={() => onGoto(current - 1)}
+                aria-label={__('Previous page')}
+            >
+                <ChevronLeft className="size-4" />
+            </Button>
+
+            {pages.map((p, i) =>
+                p === '…' ? (
+                    <span key={`gap-${i}`} className="px-1 text-muted-foreground">
+                        …
+                    </span>
+                ) : (
+                    <Button
+                        key={p}
+                        type="button"
+                        variant={p === current ? 'default' : 'outline'}
+                        size="icon-xs"
+                        className="size-8 tabular-nums"
+                        onClick={() => onGoto(p)}
+                        aria-current={p === current ? 'page' : undefined}
+                        aria-label={__('Go to page :page', { page: p })}
+                    >
+                        {p}
+                    </Button>
+                ),
+            )}
+
+            <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="size-8"
+                disabled={current >= last}
+                onClick={() => onGoto(current + 1)}
+                aria-label={__('Next page')}
+            >
+                <ChevronRight className="size-4" />
+            </Button>
+
+            {last > 7 && (
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const n = parseInt(jump, 10);
+                        if (!Number.isNaN(n)) {
+                            onGoto(n);
+                            setJump('');
+                        }
+                    }}
+                    className="ml-2 flex items-center gap-1"
+                >
+                    <Input
+                        type="number"
+                        min={1}
+                        max={last}
+                        value={jump}
+                        onChange={(e) => setJump(e.target.value)}
+                        placeholder={__('Go')}
+                        className="h-8 w-16"
+                        aria-label={__('Jump to page')}
+                    />
+                </form>
+            )}
+        </>
+    );
+}
+
+function pageWindow(current: number, last: number): Array<number | '…'> {
+    if (last <= 7) {
+        return Array.from({ length: last }, (_, i) => i + 1);
+    }
+    const pages: Array<number | '…'> = [1];
+    const start = Math.max(2, current - 1);
+    const end = Math.min(last - 1, current + 1);
+    if (start > 2) pages.push('…');
+    for (let p = start; p <= end; p++) pages.push(p);
+    if (end < last - 1) pages.push('…');
+    pages.push(last);
+    return pages;
 }
 
 function renderRowActionMenuItem(
