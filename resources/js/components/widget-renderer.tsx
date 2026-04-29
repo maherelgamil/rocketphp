@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Card } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from './ui/card';
 import ChartWidget from './chart-widget';
 import ActivityFeedWidget from './activity-feed-widget';
 import { WidgetCard } from './widget-card';
@@ -10,9 +10,13 @@ import { colSpanClass } from '../lib/grid';
 export function renderWidget(w: DashboardWidget, key: number): React.ReactNode {
     if (w.type === 'stat') {
         return (
-            <Card key={key} className={colSpanClass(w.column_span)}>
-                <p className="text-sm font-medium text-muted-foreground">{w.label}</p>
-                <p className="mt-2 text-3xl font-semibold tabular-nums">{w.value}</p>
+            <Card key={key} size="sm" className={colSpanClass(w.column_span)}>
+                <CardHeader>
+                    <CardDescription>{w.label}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-2xl font-semibold tracking-tight tabular-nums truncate">{w.value}</p>
+                </CardContent>
             </Card>
         );
     }
